@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate PWA Icons</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 { color: #6C5CE7; margin-bottom: 20px; }
+        .icon-preview {
+            width: 200px;
+            height: 200px;
+            margin: 30px auto;
+            background: linear-gradient(135deg, #6C5CE7 0%, #A29BFE 100%);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+        }
+        canvas {
+            border: 2px solid #6C5CE7;
+            margin: 10px;
+            border-radius: 10px;
+        }
+        button {
+            background: #6C5CE7;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover { background: #5F4ED1; }
+        .instructions {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+        .instructions h3 { color: #6C5CE7; }
+        .instructions li { margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Seel Data PWA Icon Generator</h1>
+        <p>Generate all required PWA icons automatically</p>
+        
+        <div class="icon-preview">SD</div>
+        
+        <div id="canvasContainer"></div>
+        
+        <button onclick="generateIcons()">Generate All Icons</button>
+        <button onclick="downloadAll()">Download All</button>
+        
+        <div class="instructions">
+            <h3>📋 Instructions:</h3>
+            <ol>
+                <li>Click "Generate All Icons" to create all sizes</li>
+                <li>Click "Download All" to save all icons</li>
+                <li>Create an "icons" folder in your Seel Data directory</li>
+                <li>Move all downloaded PNG files to the icons folder</li>
+                <li>Your PWA is ready to install on mobile devices!</li>
+            </ol>
+            
+            <h3>📱 Test Your PWA:</h3>
+            <ul>
+                <li><strong>Chrome Desktop:</strong> Click the install icon in the address bar</li>
+                <li><strong>Chrome Mobile:</strong> Menu → Add to Home Screen</li>
+                <li><strong>Safari iOS:</strong> Share → Add to Home Screen</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        let canvases = {};
+
+        function generateIcons() {
+            const container = document.getElementById('canvasContainer');
+            container.innerHTML = '';
+            
+            sizes.forEach(size => {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                
+                // Gradient background
+                const gradient = ctx.createLinearGradient(0, 0, size, size);
+                gradient.addColorStop(0, '#6C5CE7');
+                gradient.addColorStop(1, '#A29BFE');
+                ctx.fillStyle = gradient;
+                
+                // Rounded rectangle
+                const radius = size * 0.15;
+                ctx.beginPath();
+                ctx.moveTo(radius, 0);
+                ctx.lineTo(size - radius, 0);
+                ctx.quadraticCurveTo(size, 0, size, radius);
+                ctx.lineTo(size, size - radius);
+                ctx.quadraticCurveTo(size, size, size - radius, size);
+                ctx.lineTo(radius, size);
+                ctx.quadraticCurveTo(0, size, 0, size - radius);
+                ctx.lineTo(0, radius);
+                ctx.quadraticCurveTo(0, 0, radius, 0);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Text "SD"
+                ctx.fillStyle = 'white';
+                ctx.font = `bold ${size * 0.4}px Inter, Arial, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('SD', size / 2, size / 2);
+                
+                canvases[size] = canvas;
+                
+                const wrapper = document.createElement('div');
+                wrapper.style.display = 'inline-block';
+                wrapper.style.margin = '10px';
+                wrapper.style.textAlign = 'center';
+                
+                const label = document.createElement('div');
+                label.textContent = `${size}x${size}`;
+                label.style.fontSize = '12px';
+                label.style.marginBottom = '5px';
+                label.style.color = '#6C5CE7';
+                label.style.fontWeight = 'bold';
+                
+                wrapper.appendChild(label);
+                wrapper.appendChild(canvas);
+                container.appendChild(wrapper);
+            });
+        }
+
+        function downloadAll() {
+            if (Object.keys(canvases).length === 0) {
+                alert('Please generate icons first!');
+                return;
+            }
+            
+            sizes.forEach(size => {
+                const canvas = canvases[size];
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `icon-${size}x${size}.png`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            });
+        }
+
+        // Auto-generate on load
+        window.addEventListener('load', generateIcons);
+    </script>
+</body>
+</html>

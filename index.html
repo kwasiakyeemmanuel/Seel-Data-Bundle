@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Get the best data bundle deals in Ghana. MTN and Telecel packages available. Fast delivery, secure payment.">
+    <title>Seel Data - Best Data Bundle Deals in Ghana</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <script src="toast.js"></script>
+</head>
+<body>
+    <!-- Important Notice Modal -->
+    <div id="noticeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fas fa-exclamation-circle"></i>
+                <h2>Important Notice</h2>
+            </div>
+            <div class="modal-body">
+                <p>Our MTN package does <strong>NOT</strong> support any of the following:</p>
+                <ul class="notice-list">
+                    <li><i class="fas fa-times-circle"></i> Agent SIM</li>
+                    <li><i class="fas fa-times-circle"></i> Merchant SIM</li>
+                    <li><i class="fas fa-times-circle"></i> EVD SIM</li>
+                    <li><i class="fas fa-times-circle"></i> Turbonet SIMS</li>
+                    <li><i class="fas fa-times-circle"></i> Broadband SIMS</li>
+                    <li><i class="fas fa-times-circle"></i> Blacklisted SIM</li>
+                    <li><i class="fas fa-times-circle"></i> Roaming SIM</li>
+                    <li><i class="fas fa-times-circle"></i> Company/Group SIM</li>
+                    <li><i class="fas fa-times-circle"></i> Different network</li>
+                    <li><i class="fas fa-times-circle"></i> Wrong Number</li>
+                    <li><i class="fas fa-times-circle"></i> Prepaid Numbers</li>
+                    <li><i class="fas fa-times-circle"></i> Numbers with borrowed data/airtime balance</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button id="understoodBtn" class="btn btn-primary">I Understand</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-wifi"></i>
+                    <span>Seel Data</span>
+                </div>
+                <nav class="nav">
+                    <a href="#home" class="nav-link active">Home</a>
+                    <a href="#services" class="nav-link">Services</a>
+                    <a href="#about" class="nav-link">About</a>
+                    <a href="#contact" class="nav-link">Contact</a>
+                    <a href="#" class="nav-link" onclick="event.preventDefault(); showFAQ();">
+                        <i class="fas fa-question-circle"></i> FAQ
+                    </a>
+                </nav>
+                <div class="auth-buttons">
+                    <button class="btn btn-secondary btn-small" id="loginBtn">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <button class="btn btn-primary btn-small" id="signupBtn">
+                        <i class="fas fa-user-plus"></i> Sign Up
+                    </button>
+                </div>
+                <button class="help-btn" id="helpBtn">
+                    <i class="fas fa-headset"></i> Need Help?
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-background">
+            <div class="hero-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="greeting-badge">
+                    <i class="fas fa-sun"></i>
+                    <span id="greeting">Good Morning!</span>
+                </div>
+                <h1 class="hero-title">Get Best Data Deals</h1>
+                <p class="hero-subtitle">Fast, reliable, and available 24/7 for all your connectivity needs</p>
+                <div class="hero-actions">
+                    <button class="btn btn-primary btn-large" onclick="scrollToServices()">
+                        <i class="fas fa-shopping-cart"></i> Browse Bundles
+                    </button>
+                    <button class="btn btn-secondary btn-large" id="whatsappBtn">
+                        <i class="fab fa-whatsapp"></i> Join WhatsApp Group
+                    </button>
+                </div>
+                <button class="share-btn" id="shareBtn">
+                    <i class="fas fa-share-alt"></i> Share with Friends
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section class="services" id="services">
+        <div class="container">
+            <div class="section-header">
+                <h2>Our Services</h2>
+                <p>Choose from our wide range of data bundles</p>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="filters">
+                <div class="filter-header">
+                    <i class="fas fa-filter"></i>
+                    <span>Filters</span>
+                </div>
+                <div class="filter-content">
+                    <div class="filter-group">
+                        <label><i class="fas fa-tag"></i> Category</label>
+                        <select id="categoryFilter" class="filter-select">
+                            <option value="all">All Categories</option>
+                            <option value="mtn">MTN</option>
+                            <option value="telecel">Telecel</option>
+                            <option value="afa">AFA</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fas fa-check-circle"></i> Availability</label>
+                        <select id="availabilityFilter" class="filter-select">
+                            <option value="all">All Products</option>
+                            <option value="available">Available Only</option>
+                            <option value="unavailable">Out of Stock</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-small" id="clearFilters">Clear All</button>
+                </div>
+            </div>
+
+            <!-- Service Cards -->
+            <div class="service-grid">
+                <!-- MTN Data Bundle -->
+                <div class="service-card" data-category="mtn" data-availability="available">
+                    <div class="card-badge card-badge-available">Available</div>
+                    <div class="card-icon card-icon-image" style="background: #FFCC00;">
+                        <img src="MTN Logo.jpg" alt="MTN Logo">
+                    </div>
+                    <h3 class="card-title">MTN Data Bundle</h3>
+                    <p class="card-description">Largest network coverage</p>
+                    <div class="card-tags">
+                        <span class="tag">4G LTE</span>
+                        <span class="tag">Cheap</span>
+                        <span class="tag">24/7</span>
+                    </div>
+                    <button class="btn btn-primary btn-block" onclick="selectService('MTN Data Bundle')">
+                        Select Package
+                    </button>
+                </div>
+
+                <!-- Telecel Data Bundle -->
+                <div class="service-card" data-category="telecel" data-availability="available">
+                    <div class="card-badge card-badge-available">Available</div>
+                    <div class="card-icon card-icon-image" style="background: #FF0000;">
+                        <img src="Telecel-logo-scaled.jpg" alt="Telecel Logo">
+                    </div>
+                    <h3 class="card-title">Telecel Data Bundle</h3>
+                    <p class="card-description">Best value for money</p>
+                    <div class="card-tags">
+                        <span class="tag">4G+</span>
+                        <span class="tag">Fast</span>
+                        <span class="tag">Reliable</span>
+                    </div>
+                    <button class="btn btn-primary btn-block" onclick="selectService('Telecel Data Bundle')">
+                        Select Package
+                    </button>
+                </div>
+
+                <!-- MTN AFA Registration -->
+                <div class="service-card" data-category="afa" data-availability="unavailable">
+                    <div class="card-badge card-badge-unavailable">Out of Stock</div>
+                    <div class="card-icon" style="background: linear-gradient(135deg, #8B8B8B 0%, #5A5A5A 100%);">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h3 class="card-title">MTN AFA Registration</h3>
+                    <p class="card-description">Exclusive for AFA members</p>
+                    <div class="card-tags">
+                        <span class="tag">AFA</span>
+                        <span class="tag">Exclusive</span>
+                        <span class="tag">Special</span>
+                    </div>
+                    <button class="btn btn-primary btn-block" disabled>
+                        Out of Stock
+                    </button>
+                </div>
+
+                <!-- AFA Minutes -->
+                <div class="service-card" data-category="afa" data-availability="unavailable">
+                    <div class="card-badge card-badge-unavailable">Out of Stock</div>
+                    <div class="card-icon" style="background: linear-gradient(135deg, #8B8B8B 0%, #5A5A5A 100%);">
+                        <i class="fas fa-phone-alt"></i>
+                    </div>
+                    <h3 class="card-title">AFA Minutes</h3>
+                    <p class="card-description">Voice minutes for AFA members</p>
+                    <div class="card-tags">
+                        <span class="tag">Minutes</span>
+                        <span class="tag">Voice</span>
+                        <span class="tag">AFA</span>
+                    </div>
+                    <button class="btn btn-primary btn-block" disabled>
+                        Currently Unavailable
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why Choose Seel Data?</h2>
+                <p>The best data bundle service in Ghana</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shipping-fast"></i>
+                    </div>
+                    <h3>Instant Delivery</h3>
+                    <p>Get your data bundles delivered within seconds</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>100% Secure</h3>
+                    <p>Your transactions are safe and encrypted</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3>24/7 Available</h3>
+                    <p>Service available round the clock</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <h3>Best Prices</h3>
+                    <p>Competitive rates on all bundles</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about" id="about">
+        <div class="container">
+            <div class="section-header">
+                <h2>About Seel Data</h2>
+                <p>Your trusted data bundle partner in Ghana</p>
+            </div>
+            <div class="about-content">
+                <div class="about-text">
+                    <div class="about-card">
+                        <div class="about-icon">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <h3>Our Mission</h3>
+                        <p>To provide affordable, fast, and reliable data bundles to all Ghanaians, making connectivity accessible to everyone. We believe that staying connected should be simple, affordable, and hassle-free.</p>
+                    </div>
+                    <div class="about-card">
+                        <div class="about-icon">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <h3>Our Vision</h3>
+                        <p>To become Ghana's leading data bundle provider, known for exceptional service, competitive pricing, and customer satisfaction. We aim to revolutionize how people purchase and use data bundles.</p>
+                    </div>
+                    <div class="about-card">
+                        <div class="about-icon">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <h3>Our Values</h3>
+                        <ul class="values-list">
+                            <li><i class="fas fa-check-circle"></i> Customer satisfaction first</li>
+                            <li><i class="fas fa-check-circle"></i> Transparency in all transactions</li>
+                            <li><i class="fas fa-check-circle"></i> Fast and reliable service</li>
+                            <li><i class="fas fa-check-circle"></i> Competitive and fair pricing</li>
+                            <li><i class="fas fa-check-circle"></i> 24/7 customer support</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="about-stats">
+                    <div class="stat-card">
+                        <div class="stat-number">10K+</div>
+                        <div class="stat-label">Happy Customers</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">50K+</div>
+                        <div class="stat-label">Bundles Delivered</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">99.9%</div>
+                        <div class="stat-label">Success Rate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">Available Support</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact" id="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2>Contact Us</h2>
+                <p>Get in touch with us for any inquiries</p>
+            </div>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <h3>Phone</h3>
+                        <p>0537922905</p>
+                        <p>AKYE EMMANUEL KWESI</p>
+                        <small>Mon - Sun: 24/7 Available</small>
+                    </div>
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <h3>Email</h3>
+                        <p>info@seeldata.com</p>
+                        <p>support@seeldata.com</p>
+                        <small>We reply within 24 hours</small>
+                    </div>
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h3>Location</h3>
+                        <p>Accra, Ghana</p>
+                        <p>Online Service Available Nationwide</p>
+                        <small>Serving all regions of Ghana</small>
+                    </div>
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <h3>WhatsApp</h3>
+                        <p>0537922905</p>
+                        <button class="btn btn-primary btn-small" id="whatsappContactBtn">
+                            <i class="fab fa-whatsapp"></i> Chat on WhatsApp
+                        </button>
+                    </div>
+                </div>
+                <div class="contact-form-wrapper">
+                    <h3>Send Us a Message</h3>
+                    <form id="contactForm" onsubmit="handleContactForm(event)">
+                        <div class="form-group">
+                            <label for="contactName">
+                                <i class="fas fa-user"></i> Full Name *
+                            </label>
+                            <input type="text" id="contactName" name="name" placeholder="John Doe" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactEmail">
+                                <i class="fas fa-envelope"></i> Email *
+                            </label>
+                            <input type="email" id="contactEmail" name="email" placeholder="john@example.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactPhone">
+                                <i class="fas fa-phone"></i> Phone Number
+                            </label>
+                            <input type="tel" id="contactPhone" name="phone" placeholder="0241234567">
+                        </div>
+                        <div class="form-group">
+                            <label for="contactSubject">
+                                <i class="fas fa-tag"></i> Subject *
+                            </label>
+                            <input type="text" id="contactSubject" name="subject" placeholder="How can we help?" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactMessage">
+                                <i class="fas fa-comment"></i> Message *
+                            </label>
+                            <textarea id="contactMessage" name="message" rows="5" placeholder="Tell us more about your inquiry..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-paper-plane"></i> Send Message
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="logo">
+                        <i class="fas fa-wifi"></i>
+                        <span>Seel Data</span>
+                    </div>
+                    <p>Your trusted partner for affordable data bundles in Ghana.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#services">Services</a></li>
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Services</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">MTN Data</a></li>
+                        <li><a href="#">Telecel Data</a></li>
+                        <li><a href="#">AFA Registration</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact Us</h4>
+                    <ul class="footer-links">
+                        <li><i class="fas fa-phone"></i> 0537922905</li>
+                        <li><i class="fas fa-user"></i> AKYE EMMANUEL KWESI</li>
+                        <li><i class="fab fa-whatsapp"></i> 0537922905</li>
+                        <li><i class="fas fa-map-marker-alt"></i> Accra, Ghana</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Seel Data. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
