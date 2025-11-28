@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeWhatsAppSupport();
     initializeMobileMenu();
     checkWelcomeBack();
+    initializeBundleSearch();
 });
 
 // Check if user is returning after 3+ minutes
@@ -475,11 +476,26 @@ function updateHeaderForLoggedInUser(user) {
                     <i class="fas fa-chevron-down"></i>
                 </button>
                 <div class="user-dropdown" id="userDropdown">
+                    <a href="#" onclick="event.preventDefault(); showUserDashboard();">
+                        <i class="fas fa-chart-line"></i> My Dashboard
+                    </a>
                     <a href="#" onclick="event.preventDefault(); showFavoritesModal();">
                         <i class="fas fa-heart"></i> My Favorites
                     </a>
                     <a href="#" onclick="event.preventDefault(); showTransactionHistory();">
                         <i class="fas fa-history"></i> Transaction History
+                    </a>
+                    <a href="#" onclick="event.preventDefault(); show2FASetup();">
+                        <i class="fas fa-shield-alt"></i> 2FA Security
+                    </a>
+                    <a href="#" onclick="event.preventDefault(); showSupportTickets();">
+                        <i class="fas fa-ticket-alt"></i> Support Tickets
+                    </a>
+                    <a href="#" onclick="event.preventDefault(); showTestimonials();">
+                        <i class="fas fa-star"></i> Reviews
+                    </a>
+                    <a href="#" onclick="event.preventDefault(); showNetworkStatus();">
+                        <i class="fas fa-signal"></i> Network Status
                     </a>
                     <a href="#" onclick="event.preventDefault(); showFAQ();">
                         <i class="fas fa-question-circle"></i> Help & FAQ
@@ -833,9 +849,13 @@ function handleSignup(event) {
         users.push(userData);
         localStorage.setItem('seelDataUsers', JSON.stringify(users));
         
+        // Generate email verification token
+        const verificationToken = generateVerificationToken(userData.email);
+        
         // Save current user (without password for security)
         const userWithoutPassword = { ...userData };
         delete userWithoutPassword.password;
+        userWithoutPassword.emailVerified = false;
         localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
         
         submitBtn.innerHTML = originalText;
@@ -864,6 +884,11 @@ function handleSignup(event) {
         `;
         document.body.appendChild(successModal);
         successModal.style.display = 'flex';
+        
+        // Send verification email after 1 second
+        setTimeout(() => {
+            sendVerificationEmail(userData.email, verificationToken);
+        }, 1000);
     }, 800);
 }
 
@@ -1460,6 +1485,13 @@ function handlePurchase(event) {
         email: formData.get('email') || 'customer@seeldata.com'
     };
     
+    // Validate phone number
+    const validation = validatePhoneNumber(data.phoneNumber, data.service);
+    if (!validation.valid) {
+        toast.error(validation.message);
+        return;
+    }
+    
     // Show loading state
     const submitBtn = event.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
@@ -1596,9 +1628,12 @@ function verifyPayment(reference, orderData) {
         
         // Save order to localStorage
         const order = {
+            id: 'ORD' + Date.now(),
             service: orderData.service,
             phoneNumber: orderData.phoneNumber,
+            bundle: orderData.bundleSize,
             bundleSize: orderData.bundleSize,
+            amount: orderData.amount,
             paymentMethod: orderData.paymentMethod,
             paymentReference: reference,
             status: 'Completed',
@@ -1610,6 +1645,11 @@ function verifyPayment(reference, orderData) {
         const orders = JSON.parse(localStorage.getItem(orderKey) || '[]');
         orders.push(order);
         localStorage.setItem(orderKey, JSON.stringify(orders));
+        
+        // Send purchase confirmation SMS
+        setTimeout(() => {
+            sendPurchaseConfirmationSMS(order);
+        }, 500);
         
         showSuccessModal(orderData, reference);
     }, 2000);
@@ -2105,3 +2145,812 @@ function searchFAQ(query) {
         }
     });
 }
+
+// ========== NETWORK STATUS CHECKER ==========
+
+function validatePhoneNumber(phone, network) {
+    // Remove spaces and dashes
+    phone = phone.replace(/[\s-]/g, '');
+    
+    // Check if it's a valid Ghanaian number
+    if (!phone.match(/^0\d{9}$/)) {
+        return { valid: false, message: 'Invalid phone number format. Use 10 digits starting with 0.' };
+    }
+    
+    // Network prefix validation
+    const prefixes = {
+        'MTN': ['024', '054', '055', '059'],
+        'Telecel': ['020', '050']
+    };
+    
+    const prefix = phone.substring(0, 3);
+    
+    if (network && prefixes[network]) {
+        if (!prefixes[network].includes(prefix)) {
+            return { 
+                valid: false, 
+                message: `This number (${prefix}) is not on ${network} network. Please check.` 
+            };
+        }
+    }
+    
+    return { valid: true, message: 'Phone number validated successfully!' };
+}
+
+// ========== BUNDLE SEARCH & FILTERS ==========
+
+function initializeBundleSearch() {
+    const servicesSection = document.querySelector('.services');
+    if (!servicesSection) return;
+    
+    // Add search bar before filters
+    const filtersDiv = document.querySelector('.filters');
+    if (filtersDiv) {
+        const searchHTML = `
+            <div class="bundle-search-wrapper" style="margin-bottom: 20px;">
+                <input 
+                    type="text" 
+                    id="bundleSearchInput" 
+                    placeholder="Search bundles by size, price, or validity..." 
+                    style="width: 100%; padding: 15px 45px 15px 20px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px;"
+                >
+                <i class="fas fa-search" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: #999;"></i>
+            </div>
+        `;
+        filtersDiv.insertAdjacentHTML('beforebegin', searchHTML);
+        
+        document.getElementById('bundleSearchInput').addEventListener('input', function(e) {
+            filterBundles(e.target.value);
+        });
+    }
+}
+
+function filterBundles(query) {
+    const cards = document.querySelectorAll('.service-card');
+    query = query.toLowerCase();
+    
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        if (text.includes(query)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// ========== TESTIMONIALS / REVIEWS ==========
+
+function showTestimonials() {
+    const testimonials = [
+        {
+            name: 'Kwame Mensah',
+            rating: 5,
+            comment: 'Fast delivery! Got my data in less than 2 minutes. Best service ever!',
+            date: '2 days ago'
+        },
+        {
+            name: 'Ama Boateng',
+            rating: 5,
+            comment: 'Affordable prices and excellent customer support. Highly recommended!',
+            date: '1 week ago'
+        },
+        {
+            name: 'Kofi Asante',
+            rating: 4,
+            comment: 'Good service overall. Would love to see more bundle options.',
+            date: '2 weeks ago'
+        },
+        {
+            name: 'Abena Osei',
+            rating: 5,
+            comment: 'Been using Seel Data for 3 months. Never had any issues. Keep it up!',
+            date: '1 month ago'
+        }
+    ];
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'testimonialsModal';
+    
+    const testimonialsHTML = testimonials.map(t => {
+        const stars = '★'.repeat(t.rating) + '☆'.repeat(5 - t.rating);
+        return `
+            <div class="testimonial-item">
+                <div class="testimonial-header">
+                    <div>
+                        <strong>${t.name}</strong>
+                        <div class="testimonial-stars">${stars}</div>
+                    </div>
+                    <small style="color: #999;">${t.date}</small>
+                </div>
+                <p class="testimonial-comment">${t.comment}</p>
+            </div>
+        `;
+    }).join('');
+    
+    modal.innerHTML = `
+        <div class="modal-content purchase-modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <i class="fas fa-star"></i>
+                <h2>Customer Reviews</h2>
+                <button class="close-btn" onclick="closeTestimonialsModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="testimonials-stats" style="text-align: center; margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 12px;">
+                    <div style="font-size: 48px; color: #FFD700;">★★★★★</div>
+                    <div style="font-size: 24px; font-weight: 700; margin: 10px 0;">4.8 / 5.0</div>
+                    <div style="color: #666;">Based on 247 reviews</div>
+                </div>
+                ${testimonialsHTML}
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="closeTestimonialsModal()">
+                        <i class="fas fa-check"></i> Got it!
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+}
+
+function closeTestimonialsModal() {
+    const modal = document.getElementById('testimonialsModal');
+    if (modal) {
+        modal.style.display = 'none';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+// ========== USER DASHBOARD ==========
+
+function showUserDashboard() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (!currentUser) {
+        toast.warning('Please login to view your dashboard');
+        showLoginModal();
+        return;
+    }
+    
+    const orders = JSON.parse(localStorage.getItem('userOrders_' + currentUser.email) || '[]');
+    const totalSpent = orders.reduce((sum, order) => {
+        const match = order.bundleSize.match(/GH₵([0-9.]+)/);
+        return sum + (match ? parseFloat(match[1]) : 0);
+    }, 0);
+    
+    const networkCounts = {};
+    orders.forEach(order => {
+        networkCounts[order.service] = (networkCounts[order.service] || 0) + 1;
+    });
+    
+    const favoriteNetwork = Object.keys(networkCounts).reduce((a, b) => 
+        networkCounts[a] > networkCounts[b] ? a : b, 'N/A'
+    );
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'dashboardModal';
+    
+    modal.innerHTML = `
+        <div class="modal-content purchase-modal" style="max-width: 900px;">
+            <div class="modal-header">
+                <i class="fas fa-chart-line"></i>
+                <h2>My Dashboard</h2>
+                <button class="close-btn" onclick="closeDashboardModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="dashboard-stats">
+                    <div class="dashboard-card">
+                        <i class="fas fa-shopping-bag"></i>
+                        <div class="dashboard-value">${orders.length}</div>
+                        <div class="dashboard-label">Total Purchases</div>
+                    </div>
+                    <div class="dashboard-card">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <div class="dashboard-value">GH₵${totalSpent.toFixed(2)}</div>
+                        <div class="dashboard-label">Total Spent</div>
+                    </div>
+                    <div class="dashboard-card">
+                        <i class="fas fa-heart"></i>
+                        <div class="dashboard-value">${favoriteNetwork}</div>
+                        <div class="dashboard-label">Favorite Network</div>
+                    </div>
+                    <div class="dashboard-card">
+                        <i class="fas fa-piggy-bank"></i>
+                        <div class="dashboard-value">GH₵${(totalSpent * 0.15).toFixed(2)}</div>
+                        <div class="dashboard-label">Estimated Savings</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <h3 style="margin-bottom: 15px;"><i class="fas fa-chart-bar"></i> Recent Activity</h3>
+                    ${orders.length > 0 ? orders.slice(-5).reverse().map(order => `
+                        <div class="activity-item">
+                            <div class="activity-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="activity-details">
+                                <strong>${order.service}</strong> - ${order.bundleSize}
+                                <small>${new Date(order.createdAt).toLocaleDateString()}</small>
+                            </div>
+                        </div>
+                    `).join('') : '<p style="text-align: center; color: #999; padding: 20px;">No recent activity</p>'}
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+}
+
+function closeDashboardModal() {
+    const modal = document.getElementById('dashboardModal');
+    if (modal) {
+        modal.style.display = 'none';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+// ========== NETWORK STATUS INDICATOR ==========
+
+function showNetworkStatus() {
+    const networks = [
+        { name: 'MTN', status: 'operational', delay: '< 5 min' },
+        { name: 'Telecel', status: 'operational', delay: '< 5 min' }
+    ];
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'networkStatusModal';
+    
+    const statusHTML = networks.map(net => {
+        const statusColor = net.status === 'operational' ? '#28a745' : '#ffc107';
+        const statusIcon = net.status === 'operational' ? 'check-circle' : 'exclamation-triangle';
+        
+        return `
+            <div class="network-status-item">
+                <div class="network-status-header">
+                    <strong>${net.name}</strong>
+                    <span style="color: ${statusColor};">
+                        <i class="fas fa-${statusIcon}"></i> ${net.status.toUpperCase()}
+                    </span>
+                </div>
+                <small style="color: #666;">Delivery Time: ${net.delay}</small>
+            </div>
+        `;
+    }).join('');
+    
+    modal.innerHTML = `
+        <div class="modal-content purchase-modal">
+            <div class="modal-header">
+                <i class="fas fa-signal"></i>
+                <h2>Network Status</h2>
+                <button class="close-btn" onclick="closeNetworkStatusModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="text-align: center; color: #666; margin-bottom: 20px;">
+                    Real-time network status and delivery times
+                </p>
+                ${statusHTML}
+                <div style="text-align: center; margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px;">
+                    <i class="fas fa-info-circle" style="color: #28a745;"></i>
+                    <small style="color: #666;">All systems operational. Orders are being processed normally.</small>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+}
+
+function closeNetworkStatusModal() {
+    const modal = document.getElementById('networkStatusModal');
+    if (modal) {
+        modal.style.display = 'none';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+// Email Verification System
+function generateVerificationToken(email) {
+    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const verification = {
+        token: token,
+        email: email,
+        verified: false,
+        timestamp: Date.now()
+    };
+    localStorage.setItem(`emailVerification_${email}`, JSON.stringify(verification));
+    return token;
+}
+
+function sendVerificationEmail(email, token) {
+    // Simulate email sending - in production, use an email service API
+    const verificationLink = `${window.location.origin}${window.location.pathname}?verify=${token}&email=${encodeURIComponent(email)}`;
+    
+    // Show simulated email modal
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
+            <div style="text-align: center; padding: 20px;">
+                <i class="fas fa-envelope" style="font-size: 64px; color: var(--primary-color); margin-bottom: 20px;"></i>
+                <h2 style="margin-bottom: 10px;">Verification Email Sent!</h2>
+                <p style="color: #666; margin-bottom: 20px;">
+                    We've sent a verification email to <strong>${email}</strong>
+                </p>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left;">
+                    <p style="margin-bottom: 10px; font-weight: 600;">Demo Mode - Verification Link:</p>
+                    <input type="text" value="${verificationLink}" readonly 
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"
+                           onclick="this.select()">
+                    <button onclick="navigator.clipboard.writeText('${verificationLink}'); toast.success('Link copied!');"
+                            style="margin-top: 10px; padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        <i class="fas fa-copy"></i> Copy Link
+                    </button>
+                    <button onclick="verifyEmailNow('${token}', '${email}'); this.closest('.modal').remove();"
+                            style="margin-top: 10px; margin-left: 10px; padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        <i class="fas fa-check"></i> Verify Now (Demo)
+                    </button>
+                </div>
+                <p style="font-size: 14px; color: #999;">
+                    In production, this would be sent via email service
+                </p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function verifyEmailNow(token, email) {
+    const verificationData = localStorage.getItem(`emailVerification_${email}`);
+    if (!verificationData) {
+        toast.error('Invalid verification link');
+        return false;
+    }
+    
+    const verification = JSON.parse(verificationData);
+    if (verification.token !== token) {
+        toast.error('Invalid verification token');
+        return false;
+    }
+    
+    // Mark as verified
+    verification.verified = true;
+    localStorage.setItem(`emailVerification_${email}`, JSON.stringify(verification));
+    
+    // Update user verification status
+    const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+    const userIndex = users.findIndex(u => u.email === email);
+    if (userIndex !== -1) {
+        users[userIndex].emailVerified = true;
+        localStorage.setItem('seelDataUsers', JSON.stringify(users));
+        
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (currentUser && currentUser.email === email) {
+            currentUser.emailVerified = true;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        }
+    }
+    
+    toast.success('Email verified successfully! 🎉');
+    return true;
+}
+
+function checkEmailVerified(email) {
+    const verificationData = localStorage.getItem(`emailVerification_${email}`);
+    if (!verificationData) return false;
+    
+    const verification = JSON.parse(verificationData);
+    return verification.verified === true;
+}
+
+// Two-Factor Authentication System
+function generate2FACode() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function send2FACode(phone) {
+    const code = generate2FACode();
+    const twoFAData = {
+        code: code,
+        phone: phone,
+        timestamp: Date.now(),
+        expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutes
+    };
+    localStorage.setItem(`twoFA_${phone}`, JSON.stringify(twoFAData));
+    
+    // Show simulated SMS modal
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
+            <div style="text-align: center; padding: 20px;">
+                <i class="fas fa-mobile-alt" style="font-size: 64px; color: var(--primary-color); margin-bottom: 20px;"></i>
+                <h2 style="margin-bottom: 10px;">SMS Sent!</h2>
+                <p style="color: #666; margin-bottom: 20px;">
+                    We've sent a verification code to <strong>${phone}</strong>
+                </p>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <p style="margin-bottom: 10px; font-weight: 600;">Your Verification Code:</p>
+                    <div style="font-size: 32px; font-weight: 700; color: var(--primary-color); letter-spacing: 8px;">
+                        ${code}
+                    </div>
+                    <p style="font-size: 12px; color: #999; margin-top: 10px;">Code expires in 5 minutes</p>
+                </div>
+                <div style="margin-top: 20px;">
+                    <input type="text" id="verify2FAInput" placeholder="Enter 6-digit code" maxlength="6"
+                           style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 18px; text-align: center; letter-spacing: 4px; margin-bottom: 15px;">
+                    <button onclick="verify2FACode('${phone}', document.getElementById('verify2FAInput').value); this.closest('.modal').remove();"
+                            style="padding: 12px 24px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; width: 100%;">
+                        <i class="fas fa-check"></i> Verify Code
+                    </button>
+                </div>
+                <p style="font-size: 14px; color: #999; margin-top: 15px;">
+                    In production, this would be sent via SMS gateway
+                </p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    return code;
+}
+
+function verify2FACode(phone, enteredCode) {
+    const twoFAData = localStorage.getItem(`twoFA_${phone}`);
+    if (!twoFAData) {
+        toast.error('No verification code found');
+        return false;
+    }
+    
+    const data = JSON.parse(twoFAData);
+    
+    // Check if expired
+    if (Date.now() > data.expiresAt) {
+        toast.error('Verification code expired');
+        localStorage.removeItem(`twoFA_${phone}`);
+        return false;
+    }
+    
+    // Verify code
+    if (enteredCode !== data.code) {
+        toast.error('Invalid verification code');
+        return false;
+    }
+    
+    // Mark as verified
+    localStorage.setItem(`twoFA_verified_${phone}`, JSON.stringify({
+        verified: true,
+        timestamp: Date.now()
+    }));
+    localStorage.removeItem(`twoFA_${phone}`);
+    
+    toast.success('Phone verified successfully! 🎉');
+    return true;
+}
+
+function show2FASetup() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser) {
+        toast.error('Please login first');
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
+            <div style="padding: 20px;">
+                <h2 style="margin-bottom: 20px;">
+                    <i class="fas fa-shield-alt"></i> Two-Factor Authentication
+                </h2>
+                <p style="color: #666; margin-bottom: 20px;">
+                    Add an extra layer of security to your account with phone verification.
+                </p>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Phone Number</label>
+                    <input type="tel" id="twoFAPhone" placeholder="0XXXXXXXXX" maxlength="10"
+                           style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+                </div>
+                <button onclick="
+                    const phone = document.getElementById('twoFAPhone').value;
+                    if (!phone || phone.length !== 10) {
+                        toast.error('Please enter a valid 10-digit phone number');
+                        return;
+                    }
+                    send2FACode(phone);
+                " style="padding: 12px 24px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; width: 100%;">
+                    <i class="fas fa-paper-plane"></i> Send Verification Code
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Purchase SMS Confirmation System
+function sendPurchaseConfirmationSMS(orderData) {
+    const message = `
+✅ Purchase Confirmed!
+
+Order #${orderData.id}
+${orderData.bundle}
+Network: ${orderData.service}
+Phone: ${orderData.phoneNumber}
+Amount: GH₵${orderData.amount}
+
+Your data will be delivered within 5-10 minutes.
+
+Thank you for choosing Seel Data!
+    `.trim();
+    
+    // Show simulated SMS modal
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
+            <div style="text-align: center; padding: 20px;">
+                <i class="fas fa-comment-alt" style="font-size: 64px; color: var(--success-color); margin-bottom: 20px;"></i>
+                <h2 style="margin-bottom: 10px;">Confirmation SMS Sent!</h2>
+                <p style="color: #666; margin-bottom: 20px;">
+                    We've sent a confirmation to <strong>${orderData.phoneNumber}</strong>
+                </p>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: left; border-left: 4px solid var(--success-color);">
+                    <pre style="white-space: pre-wrap; font-family: inherit; margin: 0; font-size: 14px; line-height: 1.6;">${message}</pre>
+                </div>
+                <p style="font-size: 14px; color: #999;">
+                    In production, this would be sent via SMS gateway
+                </p>
+                <button onclick="this.closest('.modal').remove();"
+                        style="padding: 12px 24px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-top: 10px;">
+                    <i class="fas fa-check"></i> Got it
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Support Ticket System
+function showSupportTickets() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser) {
+        toast.error('Please login to view support tickets');
+        return;
+    }
+    
+    const tickets = JSON.parse(localStorage.getItem(`supportTickets_${currentUser.email}`) || '[]');
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 900px;">
+            <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
+            <div style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">
+                        <i class="fas fa-ticket-alt"></i> Support Tickets
+                    </h2>
+                    <button onclick="createNewTicket();"
+                            style="padding: 10px 20px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        <i class="fas fa-plus"></i> New Ticket
+                    </button>
+                </div>
+                
+                ${tickets.length === 0 ? `
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <i class="fas fa-inbox" style="font-size: 64px; margin-bottom: 20px; opacity: 0.3;"></i>
+                        <p>No support tickets yet</p>
+                        <button onclick="createNewTicket();"
+                                style="padding: 10px 20px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px;">
+                            Create Your First Ticket
+                        </button>
+                    </div>
+                ` : `
+                    <div class="tickets-list">
+                        ${tickets.map(ticket => `
+                            <div class="ticket-item" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${
+                                ticket.status === 'open' ? 'var(--warning-color)' :
+                                ticket.status === 'in-progress' ? 'var(--primary-color)' :
+                                'var(--success-color)'
+                            };">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                                    <div>
+                                        <h3 style="margin: 0 0 5px 0; font-size: 18px;">${ticket.subject}</h3>
+                                        <p style="margin: 0; color: #666; font-size: 14px;">
+                                            <i class="fas fa-tag"></i> ${ticket.category} • 
+                                            <i class="fas fa-clock"></i> ${new Date(ticket.timestamp).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <span style="padding: 6px 12px; background: ${
+                                        ticket.status === 'open' ? 'var(--warning-color)' :
+                                        ticket.status === 'in-progress' ? 'var(--primary-color)' :
+                                        'var(--success-color)'
+                                    }; color: white; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase;">
+                                        ${ticket.status}
+                                    </span>
+                                </div>
+                                <p style="margin: 10px 0; color: #666;">${ticket.description.substring(0, 100)}${ticket.description.length > 100 ? '...' : ''}</p>
+                                <button onclick="viewTicketDetails('${ticket.id}');"
+                                        style="padding: 8px 16px; background: white; color: var(--primary-color); border: 2px solid var(--primary-color); border-radius: 6px; cursor: pointer; font-size: 14px;">
+                                    <i class="fas fa-eye"></i> View Details
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function createNewTicket() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
+            <div style="padding: 20px;">
+                <h2 style="margin-bottom: 20px;">
+                    <i class="fas fa-plus-circle"></i> Create Support Ticket
+                </h2>
+                <form id="ticketForm" onsubmit="event.preventDefault(); submitTicket();">
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Subject</label>
+                        <input type="text" id="ticketSubject" required
+                               placeholder="Brief description of your issue"
+                               style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Category</label>
+                        <select id="ticketCategory" required
+                                style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+                            <option value="">Select a category</option>
+                            <option value="Payment Issue">Payment Issue</option>
+                            <option value="Data Not Received">Data Not Received</option>
+                            <option value="Account Problem">Account Problem</option>
+                            <option value="Technical Support">Technical Support</option>
+                            <option value="General Inquiry">General Inquiry</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Description</label>
+                        <textarea id="ticketDescription" required rows="5"
+                                  placeholder="Please provide detailed information about your issue..."
+                                  style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; resize: vertical;"></textarea>
+                    </div>
+                    <button type="submit"
+                            style="padding: 12px 24px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; width: 100%;">
+                        <i class="fas fa-paper-plane"></i> Submit Ticket
+                    </button>
+                </form>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function submitTicket() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const subject = document.getElementById('ticketSubject').value;
+    const category = document.getElementById('ticketCategory').value;
+    const description = document.getElementById('ticketDescription').value;
+    
+    const ticket = {
+        id: 'TKT' + Date.now(),
+        subject: subject,
+        category: category,
+        description: description,
+        status: 'open',
+        timestamp: Date.now(),
+        userEmail: currentUser.email,
+        userName: currentUser.name
+    };
+    
+    const tickets = JSON.parse(localStorage.getItem(`supportTickets_${currentUser.email}`) || '[]');
+    tickets.unshift(ticket);
+    localStorage.setItem(`supportTickets_${currentUser.email}`, JSON.stringify(tickets));
+    
+    document.querySelector('.modal').remove();
+    toast.success('Support ticket created successfully! Our team will respond soon.');
+    showSupportTickets();
+}
+
+function viewTicketDetails(ticketId) {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const tickets = JSON.parse(localStorage.getItem(`supportTickets_${currentUser.email}`) || '[]');
+    const ticket = tickets.find(t => t.id === ticketId);
+    
+    if (!ticket) {
+        toast.error('Ticket not found');
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 700px;">
+            <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
+            <div style="padding: 20px;">
+                <div style="border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                        <h2 style="margin: 0;">${ticket.subject}</h2>
+                        <span style="padding: 6px 12px; background: ${
+                            ticket.status === 'open' ? 'var(--warning-color)' :
+                            ticket.status === 'in-progress' ? 'var(--primary-color)' :
+                            'var(--success-color)'
+                        }; color: white; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase;">
+                            ${ticket.status}
+                        </span>
+                    </div>
+                    <p style="margin: 5px 0; color: #666; font-size: 14px;">
+                        <i class="fas fa-ticket-alt"></i> ${ticket.id} • 
+                        <i class="fas fa-tag"></i> ${ticket.category} • 
+                        <i class="fas fa-clock"></i> ${new Date(ticket.timestamp).toLocaleString()}
+                    </p>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #666;">Description</h3>
+                    <p style="margin: 0; line-height: 1.6; white-space: pre-wrap;">${ticket.description}</p>
+                </div>
+                
+                <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid var(--success-color);">
+                    <p style="margin: 0; font-size: 14px;">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Our support team typically responds within 24 hours.</strong>
+                        You'll receive an email notification when your ticket is updated.
+                    </p>
+                </div>
+                
+                <button onclick="this.closest('.modal').remove(); showSupportTickets();"
+                        style="padding: 12px 24px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-top: 20px; width: 100%;">
+                    <i class="fas fa-arrow-left"></i> Back to Tickets
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Check for email verification token on page load
+window.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const verifyToken = urlParams.get('verify');
+    const verifyEmailParam = urlParams.get('email');
+    
+    if (verifyToken && verifyEmailParam) {
+        setTimeout(() => {
+            if (verifyEmailNow(verifyToken, decodeURIComponent(verifyEmailParam))) {
+                // Clear URL parameters
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }, 500);
+    }
+});
+
+// Initialize new features on load
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        initializeBundleSearch();
+    }, 500);
+});
