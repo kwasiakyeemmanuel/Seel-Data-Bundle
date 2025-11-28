@@ -11,6 +11,39 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeFavorites();
     initializeWhatsAppSupport();
     initializeMobileMenu();
+    checkWelcomeBack();
+});
+
+// Check if user is returning after 3+ minutes
+function checkWelcomeBack() {
+    const lastVisit = localStorage.getItem('lastVisitTime');
+    const currentTime = Date.now();
+    const threeMinutes = 3 * 60 * 1000; // 3 minutes in milliseconds
+    
+    if (lastVisit) {
+        const timeDifference = currentTime - parseInt(lastVisit);
+        
+        if (timeDifference > threeMinutes) {
+            // User has been away for more than 3 minutes
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            
+            setTimeout(() => {
+                if (currentUser) {
+                    toast.success(`Welcome back, ${currentUser.name}! 👋`, 4000);
+                } else {
+                    toast.info('Welcome back! Sign up to unlock exclusive deals! 🎉', 4000);
+                }
+            }, 1000);
+        }
+    }
+    
+    // Update last visit time
+    localStorage.setItem('lastVisitTime', currentTime.toString());
+}
+
+// Update last visit time when user leaves
+window.addEventListener('beforeunload', function() {
+    localStorage.setItem('lastVisitTime', Date.now().toString());
 });
 
 // Mobile Menu Toggle
