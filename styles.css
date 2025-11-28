@@ -1006,6 +1006,18 @@ body {
 }
 
 /* Responsive Design */
+/* Mobile Navigation Toggle */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--primary-color);
+    cursor: pointer;
+    padding: 10px;
+    z-index: 1001;
+}
+
 @media (max-width: 768px) {
     .modal-content {
         width: 95%;
@@ -1029,21 +1041,21 @@ body {
     }
 
     .header-content {
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
         gap: 15px;
-        padding: 12px 0;
+        padding: 15px 0;
     }
 
-    .auth-buttons {
-        order: 3;
-    }
-
-    .help-btn {
-        order: 4;
+    .mobile-menu-toggle {
+        display: block;
+        order: 2;
     }
 
     .logo {
         font-size: 20px;
+        order: 1;
     }
 
     .logo i {
@@ -1051,18 +1063,65 @@ body {
     }
 
     .nav {
-        gap: 15px;
-        flex-wrap: wrap;
-        justify-content: center;
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 280px;
+        height: 100vh;
+        background: white;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: stretch;
+        padding: 80px 20px 20px;
+        box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+        transition: right 0.3s ease;
+        z-index: 1000;
+        gap: 0;
+    }
+
+    .nav.active {
+        right: 0;
     }
 
     .nav-link {
-        font-size: 14px;
+        font-size: 16px;
+        padding: 15px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        text-align: left;
+        border-radius: 0;
+    }
+
+    .nav-link:hover {
+        background: #f8f9fa;
+    }
+
+    .auth-buttons {
+        order: 3;
+        display: flex;
+        gap: 10px;
     }
 
     .help-btn {
-        padding: 10px 20px;
-        font-size: 13px;
+        display: none;
+    }
+
+    /* Mobile menu overlay */
+    .mobile-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: rgba(0,0,0,0.5);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        z-index: 999;
+    }
+
+    .mobile-overlay.active {
+        opacity: 1;
+        visibility: visible;
     }
 
     .hero {

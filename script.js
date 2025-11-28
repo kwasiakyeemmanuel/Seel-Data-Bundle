@@ -10,7 +10,57 @@ document.addEventListener('DOMContentLoaded', function() {
     checkPasswordResetToken();
     initializeFavorites();
     initializeWhatsAppSupport();
+    initializeMobileMenu();
 });
+
+// Mobile Menu Toggle
+function initializeMobileMenu() {
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    const mobileNav = document.getElementById('mobileNav');
+    const mobileOverlay = document.getElementById('mobileOverlay');
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    if (menuToggle) {
+        menuToggle.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            mobileNav.classList.toggle('active');
+            mobileOverlay.classList.toggle('active');
+            
+            // Toggle icon
+            if (mobileNav.classList.contains('active')) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        });
+    }
+    
+    // Close menu when overlay is clicked
+    if (mobileOverlay) {
+        mobileOverlay.addEventListener('click', function() {
+            mobileNav.classList.remove('active');
+            mobileOverlay.classList.remove('active');
+            const icon = menuToggle.querySelector('i');
+            icon.classList.remove('fa-times');
+            icon.classList.add('fa-bars');
+        });
+    }
+    
+    // Close menu when nav link is clicked
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                mobileNav.classList.remove('active');
+                mobileOverlay.classList.remove('active');
+                const icon = menuToggle.querySelector('i');
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        });
+    });
+}
 
 // Modal functionality
 function initializeModal() {
