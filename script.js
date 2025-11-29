@@ -983,10 +983,13 @@ function closeSignupSuccessModal() {
 
 // Handle logout
 function handleLogout() {
+    // Clear user data
     localStorage.removeItem('currentUser');
     sessionStorage.removeItem('isNewUser');
     sessionStorage.removeItem('signupTime');
-    location.reload();
+    
+    // Redirect to home page instead of reloading (faster)
+    window.location.href = 'index.html';
 }
 
 // Show delete account modal
