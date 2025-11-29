@@ -1783,9 +1783,9 @@ function verifyPayment(reference, orderData) {
         orders.push(order);
         localStorage.setItem(orderKey, JSON.stringify(orders));
         
-        // Send purchase confirmation SMS
+        // Send purchase confirmation email
         setTimeout(() => {
-            sendPurchaseConfirmationSMS(order);
+            sendPurchaseConfirmationEmail(order);
         }, 500);
         
         showSuccessModal(orderData, reference);
@@ -2780,6 +2780,9 @@ function generate2FACode() {
 }
 
 function send2FACode(phone) {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const userEmail = currentUser.email || 'customer@example.com';
+    
     const code = generate2FACode();
     const twoFAData = {
         code: code,
@@ -2789,14 +2792,48 @@ function send2FACode(phone) {
     };
     localStorage.setItem(`twoFA_${phone}`, JSON.stringify(twoFAData));
     
-    const message = `Your Seel Data verification code is: ${code}
-
-This code expires in 5 minutes.
-
-Do not share this code with anyone.`;
+    // Email content
+    const subject = '🔐 Your 2FA Verification Code - Seel Data';
+    const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f8f9fa;">
+            <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #667eea; margin: 0;">🔐 Two-Factor Authentication</h1>
+                </div>
+                
+                <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Hi ${currentUser.name || 'there'},</p>
+                
+                <p style="font-size: 16px; color: #333; margin-bottom: 30px;">
+                    You requested a verification code for your Seel Data account. Use the code below to complete your authentication:
+                </p>
+                
+                <div style="background: #f0f4ff; padding: 30px; border-radius: 8px; text-align: center; margin: 30px 0;">
+                    <p style="font-size: 14px; color: #666; margin-bottom: 10px; font-weight: 600;">Your Verification Code:</p>
+                    <div style="font-size: 48px; font-weight: 700; color: #667eea; letter-spacing: 12px; margin: 20px 0;">
+                        ${code}
+                    </div>
+                    <p style="font-size: 13px; color: #999; margin-top: 15px;">⏱️ Code expires in 5 minutes</p>
+                </div>
+                
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin: 20px 0;">
+                    <p style="margin: 0; color: #856404; font-size: 14px;">
+                        <strong>⚠️ Security Notice:</strong> Do not share this code with anyone. Seel Data staff will never ask for your verification code.
+                    </p>
+                </div>
+                
+                <p style="font-size: 14px; color: #666; margin-top: 20px;">
+                    If you didn't request this code, please ignore this email or contact our support team immediately.
+                </p>
+                
+                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+                    <p style="font-size: 12px; color: #999;">Need help? Contact us on WhatsApp: +233 53 792 2905</p>
+                </div>
+            </div>
+        </div>
+    `;
     
-    // Send real SMS
-    sendRealSMS(phone, message).then(result => {
+    // Send email
+    sendEmailNotification(userEmail, subject, htmlContent).then(result => {
         // Show verification modal
         const modal = document.createElement('div');
         modal.className = 'modal';
@@ -2805,33 +2842,14 @@ Do not share this code with anyone.`;
             <div class="modal-content" style="max-width: 500px;">
                 <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
                 <div style="text-align: center; padding: 20px;">
-                    <i class="fas fa-mobile-alt" style="font-size: 64px; color: var(--primary-color); margin-bottom: 20px;"></i>
-                    <h2 style="margin-bottom: 10px;">
-                        ${result.success ? (result.demo ? 'Verification Code (Demo)' : 'SMS Sent!') : 'Verification Code'}
-                    </h2>
+                    <i class="fas fa-envelope" style="font-size: 64px; color: var(--primary-color); margin-bottom: 20px;"></i>
+                    <h2 style="margin-bottom: 10px;">Verification Code Sent!</h2>
                     <p style="color: #666; margin-bottom: 20px;">
-                        ${result.success && !result.demo 
-                            ? `We've sent a verification code to <strong>${phone}</strong>` 
-                            : `Enter the verification code below`}
+                        We've sent a verification code to <strong>${userEmail}</strong>
                     </p>
-                    ${result.demo ? `
-                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                            <p style="margin-bottom: 10px; font-weight: 600;">Your Verification Code:</p>
-                            <div style="font-size: 32px; font-weight: 700; color: var(--primary-color); letter-spacing: 8px;">
-                                ${code}
-                            </div>
-                            <p style="font-size: 12px; color: #999; margin-top: 10px;">Code expires in 5 minutes</p>
-                        </div>
-                        <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-                            <p style="font-size: 13px; color: #856404; margin: 0;">
-                                <i class="fas fa-info-circle"></i> In production, code will be sent via SMS
-                            </p>
-                        </div>
-                    ` : `
-                        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
-                            Check your phone for the 6-digit code
-                        </p>
-                    `}
+                    <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+                        Check your email inbox (and spam folder) for the 6-digit code
+                    </p>
                     <div style="margin-top: 20px;">
                         <input type="text" id="verify2FAInput" placeholder="Enter 6-digit code" maxlength="6"
                                style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 18px; text-align: center; letter-spacing: 4px; margin-bottom: 15px;">
@@ -2924,134 +2942,103 @@ function show2FASetup() {
 }
 
 // Purchase SMS Confirmation System
-// SMS Configuration - Add your SMS API credentials here
-const SMS_CONFIG = {
-    provider: 'arkesel', // Options: 'arkesel', 'hubtel', 'demo'
-    arkesel: {
-        apiKey: 'YOUR_ARKESEL_API_KEY', // Get from https://arkesel.com
-        senderId: 'SeelData'
-    },
-    hubtel: {
-        clientId: 'YOUR_HUBTEL_CLIENT_ID', // Get from https://hubtel.com
-        clientSecret: 'YOUR_HUBTEL_CLIENT_SECRET',
-        senderId: 'SeelData'
-    }
-};
-
-// Send real SMS via API
-async function sendRealSMS(phoneNumber, message) {
-    // Clean phone number (remove spaces, ensure it starts with country code)
-    let cleanPhone = phoneNumber.replace(/\s+/g, '');
-    if (cleanPhone.startsWith('0')) {
-        cleanPhone = '233' + cleanPhone.substring(1); // Ghana country code
-    }
-    
-    if (SMS_CONFIG.provider === 'demo') {
-        console.log('SMS Demo Mode - Message:', message, 'To:', cleanPhone);
-        return { success: true, demo: true };
-    }
+// Email Notification System
+async function sendEmailNotification(recipientEmail, subject, htmlContent) {
+    // Using Web3Forms - Free email service (no backend needed)
+    const WEB3FORMS_KEY = 'YOUR_WEB3FORMS_ACCESS_KEY'; // Get free key from https://web3forms.com
     
     try {
-        if (SMS_CONFIG.provider === 'arkesel') {
-            // Arkesel SMS API
-            const response = await fetch('https://sms.arkesel.com/api/v2/sms/send', {
-                method: 'POST',
-                headers: {
-                    'api-key': SMS_CONFIG.arkesel.apiKey,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    sender: SMS_CONFIG.arkesel.senderId,
-                    message: message,
-                    recipients: [cleanPhone]
-                })
-            });
-            
-            const data = await response.json();
-            return { success: data.code === '0000' || data.code === '1000', data };
-            
-        } else if (SMS_CONFIG.provider === 'hubtel') {
-            // Hubtel SMS API
-            const auth = btoa(SMS_CONFIG.hubtel.clientId + ':' + SMS_CONFIG.hubtel.clientSecret);
-            const response = await fetch('https://api.hubtel.com/v1/messages/send', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Basic ' + auth,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    From: SMS_CONFIG.hubtel.senderId,
-                    To: cleanPhone,
-                    Content: message
-                })
-            });
-            
-            const data = await response.json();
-            return { success: response.ok, data };
-        }
+        const response = await fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                access_key: WEB3FORMS_KEY,
+                subject: subject,
+                from_name: 'Seel Data Bundle',
+                to: recipientEmail,
+                message: htmlContent,
+                email: 'noreply@seeldatabundle.me'
+            })
+        });
+        
+        const result = await response.json();
+        return { success: result.success, data: result };
     } catch (error) {
-        console.error('SMS Error:', error);
+        console.error('Email Error:', error);
         return { success: false, error: error.message };
     }
 }
 
-function sendPurchaseConfirmationSMS(orderData) {
-    const message = `✅ Purchase Confirmed!
-
-Order #${orderData.id}
-${orderData.bundle}
-Network: ${orderData.service}
-Phone: ${orderData.phoneNumber}
-Amount: GH₵${orderData.amount}
-
-Your data will be delivered fast and reliably to your satisfaction.
-
-Thank you for choosing Seel Data!`;
+function sendPurchaseConfirmationEmail(orderData) {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const userEmail = currentUser.email || 'customer@example.com';
     
-    // Send real SMS
-    sendRealSMS(orderData.phoneNumber, message).then(result => {
-        // Show confirmation modal
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.style.display = 'block';
-        modal.innerHTML = `
-            <div class="modal-content" style="max-width: 500px;">
-                <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
-                <div style="text-align: center; padding: 20px;">
-                    <i class="fas fa-${result.success ? 'comment-alt' : 'exclamation-triangle'}" 
-                       style="font-size: 64px; color: ${result.success ? 'var(--success-color)' : '#ffc107'}; margin-bottom: 20px;"></i>
-                    <h2 style="margin-bottom: 10px;">
-                        ${result.success ? (result.demo ? 'SMS Preview (Demo Mode)' : 'Confirmation SMS Sent!') : 'SMS Sending Issue'}
-                    </h2>
-                    <p style="color: #666; margin-bottom: 20px;">
-                        ${result.success 
-                            ? (result.demo 
-                                ? `Preview of SMS that would be sent to <strong>${orderData.phoneNumber}</strong>` 
-                                : `Confirmation sent to <strong>${orderData.phoneNumber}</strong>`)
-                            : 'SMS could not be sent, but your order is confirmed'}
+    const subject = `✅ Order Confirmed - #${orderData.id}`;
+    const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f8f9fa;">
+            <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #667eea; margin: 0;">✅ Purchase Confirmed!</h1>
+                </div>
+                
+                <div style="background: #f0f4ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h2 style="color: #333; margin-top: 0;">Order Details</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Order ID:</td>
+                            <td style="padding: 8px 0; font-weight: bold;">${orderData.id}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Bundle:</td>
+                            <td style="padding: 8px 0; font-weight: bold;">${orderData.bundle}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Network:</td>
+                            <td style="padding: 8px 0; font-weight: bold;">${orderData.service}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Phone:</td>
+                            <td style="padding: 8px 0; font-weight: bold;">${orderData.phoneNumber}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #666;">Amount:</td>
+                            <td style="padding: 8px 0; font-weight: bold; color: #667eea;">GH₵${orderData.amount}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div style="background: #d4edda; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #155724;">
+                        <strong>📦 Delivery Status:</strong> Your data will be delivered fast and reliably to your satisfaction.
                     </p>
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: left; border-left: 4px solid ${result.success ? 'var(--success-color)' : '#ffc107'};">
-                        <pre style="white-space: pre-wrap; font-family: inherit; margin: 0; font-size: 14px; line-height: 1.6;">${message}</pre>
-                    </div>
-                    ${result.demo ? `
-                        <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-                            <p style="font-size: 13px; color: #856404; margin: 0;">
-                                <i class="fas fa-info-circle"></i> <strong>Demo Mode:</strong> 
-                                To send real SMS, configure your API key in script.js (SMS_CONFIG)
-                            </p>
-                        </div>
-                    ` : ''}
-                    <button onclick="this.closest('.modal').remove();"
-                            style="padding: 12px 24px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-top: 10px;">
-                        <i class="fas fa-check"></i> Got it
-                    </button>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+                    <p style="color: #666; margin-bottom: 15px;">Thank you for choosing Seel Data!</p>
+                    <a href="https://seeldatabundle.me" style="display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">Visit Our Website</a>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <p style="font-size: 12px; color: #999;">Need help? Contact us on WhatsApp: +233 53 792 2905</p>
                 </div>
             </div>
-        `;
-        document.body.appendChild(modal);
+        </div>
+    `;
+    
+    // Send email notification
+    sendEmailNotification(userEmail, subject, htmlContent).then(result => {
+        // Show confirmation notification
+        if (result.success) {
+            toast.success(`✅ Confirmation email sent to ${userEmail}`);
+        } else {
+            toast.info('Order confirmed! Check your dashboard for details.');
+        }
     }).catch(error => {
-        console.error('SMS Error:', error);
-        toast.error('Could not send SMS notification');
+        console.error('Email Error:', error);
+        toast.info('Order confirmed! Check your dashboard for details.');
     });
 }
 
