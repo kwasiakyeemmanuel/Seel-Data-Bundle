@@ -3209,13 +3209,14 @@ async function sendEmailNotification(recipientEmail, subject, htmlContent) {
                 access_key: WEB3FORMS_KEY,
                 subject: subject,
                 from_name: 'Seel Data Bundle',
-                to: recipientEmail,
+                email: recipientEmail,
                 message: htmlContent,
-                email: 'noreply@seeldatabundle.me'
+                replyto: 'noreply@seeldatabundle.me'
             })
         });
         
         const result = await response.json();
+        console.log('Email API Response:', result);
         return { success: result.success, data: result };
     } catch (error) {
         console.error('Email Error:', error);
