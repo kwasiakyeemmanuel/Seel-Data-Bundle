@@ -186,8 +186,8 @@
         </div>
     </div>
     
-    <script src="js/toast.js"></script>
-    <script src="script.js"></script>
+    <script src="toast.js"></script>
+    <script src="script.js?v=2"></script>
     <script>
         // Load user profile
         const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
@@ -261,28 +261,35 @@
                 return;
             }
             
-            fetch('api/auth/change-password.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: currentUser.id,
-                    current_password: current_password,
-                    new_password: new_password
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    toast.success('Password changed successfully!');
-                    document.getElementById('changePasswordModal').remove();
-                } else {
-                    toast.error(data.message || 'Failed to change password');
+            // Update password in localStorage
+            const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+            const userIndex = users.findIndex(u => u.email === currentUser.email);
+            
+            if (userIndex !== -1) {
+                // Verify current password
+                if (users[userIndex].password !== current_password) {
+                    toast.error('Current password is incorrect!');
+                    return;
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                toast.error('An error occurred');
-            });
+                
+                // Update password
+                users[userIndex].password = new_password;
+                localStorage.setItem('seelDataUsers', JSON.stringify(users));
+                
+                // Update current user session
+                currentUser.password = new_password;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                toast.success('Password changed successfully!');
+                document.getElementById('changePasswordModal').style.display = 'none';
+                document.getElementById('changePasswordForm').reset();
+            } else {
+                toast.error('User not found!');
+            }
+        }
+    </script>
+</body>
+</html>
         }
         
         function logout() {

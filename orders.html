@@ -167,8 +167,8 @@
         </div>
     </div>
     
-    <script src="js/toast.js"></script>
-    <script src="script.js"></script>
+    <script src="toast.js"></script>
+    <script src="script.js?v=2"></script>
     <script>
         const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
         
@@ -181,18 +181,16 @@
         }
         
         function loadOrders() {
-            fetch(`api/orders/history.php?user_id=${currentUser.id}`)
-                .then(response => response.json())
-                .then(data => {
-                    const ordersContent = document.getElementById('ordersContent');
-                    
-                    if (data.status === 'success' && data.orders.length > 0) {
-                        ordersContent.innerHTML = data.orders.map(order => `
-                            <div class="order-card">
-                                <div class="order-header">
-                                    <div class="order-id">
-                                        Order #${order.id}
-                                    </div>
+            const ordersContent = document.getElementById('ordersContent');
+            const orders = JSON.parse(localStorage.getItem(`userOrders_${currentUser.email}`) || '[]');
+            
+            if (orders.length > 0) {
+                ordersContent.innerHTML = orders.map(order => `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div class="order-id">
+                                Order #${order.id}
+                            </div>
                                     <div class="order-status status-${order.status}">
                                         ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                     </div>
@@ -245,29 +243,18 @@
                                 </div>
                             </div>
                         `).join('');
-                    } else {
-                        ordersContent.innerHTML = `
-                            <div class="empty-state">
-                                <i class="fas fa-shopping-bag"></i>
-                                <h2>No Orders Yet</h2>
-                                <p style="color: #636e72; margin: 10px 0 20px;">You haven't made any purchases yet</p>
-                                <a href="index.html#services" class="btn btn-primary">
-                                    <i class="fas fa-shopping-cart"></i> Start Shopping
-                                </a>
-                            </div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('ordersContent').innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-exclamation-circle" style="color: #ff7675;"></i>
-                            <h2>Error Loading Orders</h2>
-                            <p style="color: #636e72;">Please try again later</p>
-                        </div>
-                    `;
-                });
+            } else {
+                ordersContent.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-shopping-bag"></i>
+                        <h2>No Orders Yet</h2>
+                        <p style="color: #636e72; margin: 10px 0 20px;">You haven't made any purchases yet</p>
+                        <a href="index.html#services" class="btn btn-primary">
+                            <i class="fas fa-shopping-cart"></i> Start Shopping
+                        </a>
+                    </div>
+                `;
+            }
         }
         
         function logout() {
