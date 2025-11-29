@@ -2119,3 +2119,20 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     line-height: 1.6;
 }
+
+/* Rating Input Styles */
+.rating-input {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+}
+
+.rating-input span {
+    transition: all 0.2s;
+    color: #ddd;
+}
+
+.rating-input span:hover {
+    transform: scale(1.2);
+    color: #FFD700;
+}

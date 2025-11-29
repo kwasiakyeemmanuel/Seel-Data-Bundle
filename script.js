@@ -2230,38 +2230,53 @@ function filterBundles(query) {
 // ========== TESTIMONIALS / REVIEWS ==========
 
 function showTestimonials() {
-    const testimonials = [
+    // Get stored reviews from localStorage
+    const storedReviews = JSON.parse(localStorage.getItem('customerReviews') || '[]');
+    
+    // Default reviews (always shown)
+    const defaultReviews = [
         {
             name: 'Kwame Mensah',
             rating: 5,
             comment: 'Fast delivery! Got my data in less than 2 minutes. Best service ever!',
-            date: '2 days ago'
+            date: '2 days ago',
+            timestamp: Date.now() - (2 * 24 * 60 * 60 * 1000)
         },
         {
             name: 'Ama Boateng',
             rating: 5,
             comment: 'Affordable prices and excellent customer support. Highly recommended!',
-            date: '1 week ago'
+            date: '1 week ago',
+            timestamp: Date.now() - (7 * 24 * 60 * 60 * 1000)
         },
         {
             name: 'Kofi Asante',
             rating: 4,
             comment: 'Good service overall. Would love to see more bundle options.',
-            date: '2 weeks ago'
+            date: '2 weeks ago',
+            timestamp: Date.now() - (14 * 24 * 60 * 60 * 1000)
         },
         {
             name: 'Abena Osei',
             rating: 5,
             comment: 'Been using Seel Data for 3 months. Never had any issues. Keep it up!',
-            date: '1 month ago'
+            date: '1 month ago',
+            timestamp: Date.now() - (30 * 24 * 60 * 60 * 1000)
         }
     ];
+    
+    // Combine and sort by timestamp (newest first)
+    const allReviews = [...storedReviews, ...defaultReviews].sort((a, b) => b.timestamp - a.timestamp);
+    
+    // Calculate average rating
+    const totalRating = allReviews.reduce((sum, r) => sum + r.rating, 0);
+    const avgRating = (totalRating / allReviews.length).toFixed(1);
     
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.id = 'testimonialsModal';
     
-    const testimonialsHTML = testimonials.map(t => {
+    const testimonialsHTML = allReviews.map(t => {
         const stars = '★'.repeat(t.rating) + '☆'.repeat(5 - t.rating);
         return `
             <div class="testimonial-item">
@@ -2289,20 +2304,128 @@ function showTestimonials() {
             <div class="modal-body">
                 <div class="testimonials-stats" style="text-align: center; margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 12px;">
                     <div style="font-size: 48px; color: #FFD700;">★★★★★</div>
-                    <div style="font-size: 24px; font-weight: 700; margin: 10px 0;">4.8 / 5.0</div>
-                    <div style="color: #666;">Based on 247 reviews</div>
-                </div>
-                ${testimonialsHTML}
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn btn-primary" onclick="closeTestimonialsModal()">
-                        <i class="fas fa-check"></i> Got it!
+                    <div style="font-size: 24px; font-weight: 700; margin: 10px 0;">${avgRating} / 5.0</div>
+                    <div style="color: #666;">Based on ${allReviews.length} reviews</div>
+                    <button class="btn btn-primary" onclick="showAddReviewForm()" style="margin-top: 15px;">
+                        <i class="fas fa-plus"></i> Write a Review
                     </button>
+                </div>
+                <div id="reviewsList">
+                    ${testimonialsHTML}
                 </div>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
     modal.style.display = 'flex';
+}
+
+function showAddReviewForm() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (!currentUser) {
+        toast.warning('Please login to write a review');
+        closeTestimonialsModal();
+        showLoginModal();
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'addReviewModal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close" onclick="this.closest('.modal').remove(); showTestimonials();">&times;</span>
+            <div style="padding: 20px;">
+                <h2 style="margin-bottom: 20px;">
+                    <i class="fas fa-star"></i> Write a Review
+                </h2>
+                <form id="reviewForm" onsubmit="event.preventDefault(); submitReview();">
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 10px; font-weight: 600;">Your Rating</label>
+                        <div class="rating-input" id="ratingInput" style="font-size: 32px; cursor: pointer;">
+                            <span data-rating="1" onclick="selectRating(1)">☆</span>
+                            <span data-rating="2" onclick="selectRating(2)">☆</span>
+                            <span data-rating="3" onclick="selectRating(3)">☆</span>
+                            <span data-rating="4" onclick="selectRating(4)">☆</span>
+                            <span data-rating="5" onclick="selectRating(5)">☆</span>
+                        </div>
+                        <input type="hidden" id="selectedRating" required>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Your Review</label>
+                        <textarea id="reviewComment" required rows="5" maxlength="500"
+                                  placeholder="Share your experience with Seel Data..."
+                                  style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; resize: vertical; font-family: inherit;"></textarea>
+                        <small style="color: #999;">Maximum 500 characters</small>
+                    </div>
+                    <button type="submit"
+                            style="padding: 12px 24px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; width: 100%;">
+                        <i class="fas fa-paper-plane"></i> Submit Review
+                    </button>
+                </form>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.style.display = 'block';
+}
+
+function selectRating(rating) {
+    document.getElementById('selectedRating').value = rating;
+    const stars = document.querySelectorAll('#ratingInput span');
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.textContent = '★';
+            star.style.color = '#FFD700';
+        } else {
+            star.textContent = '☆';
+            star.style.color = '#ddd';
+        }
+    });
+}
+
+function submitReview() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const rating = parseInt(document.getElementById('selectedRating').value);
+    const comment = document.getElementById('reviewComment').value.trim();
+    
+    if (!rating) {
+        toast.error('Please select a rating');
+        return;
+    }
+    
+    if (!comment) {
+        toast.error('Please write a review');
+        return;
+    }
+    
+    // Get time difference for date display
+    const now = Date.now();
+    
+    const review = {
+        name: currentUser.name,
+        rating: rating,
+        comment: comment,
+        date: 'Just now',
+        timestamp: now,
+        userEmail: currentUser.email
+    };
+    
+    // Save to localStorage
+    const reviews = JSON.parse(localStorage.getItem('customerReviews') || '[]');
+    reviews.unshift(review);
+    localStorage.setItem('customerReviews', JSON.stringify(reviews));
+    
+    // Close form and refresh testimonials
+    document.getElementById('addReviewModal').remove();
+    closeTestimonialsModal();
+    
+    toast.success('Thank you for your review! 🌟');
+    
+    // Show updated testimonials
+    setTimeout(() => {
+        showTestimonials();
+    }, 500);
 }
 
 function closeTestimonialsModal() {
@@ -2312,6 +2435,7 @@ function closeTestimonialsModal() {
         setTimeout(() => modal.remove(), 300);
     }
 }
+
 
 // ========== USER DASHBOARD ==========
 
