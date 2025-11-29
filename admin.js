@@ -104,9 +104,20 @@ function loadDashboardData() {
     // Debug: Log localStorage contents
     console.log('=== ADMIN DASHBOARD DEBUG ===');
     console.log('Total localStorage items:', localStorage.length);
-    console.log('Users data:', localStorage.getItem('seelDataUsers'));
+    const usersData = localStorage.getItem('seelDataUsers');
+    console.log('Raw users data:', usersData);
+    const users = JSON.parse(usersData || '[]');
+    console.log('Parsed users:', users);
+    console.log('Number of users:', users.length);
     console.log('Current domain:', window.location.hostname);
+    console.log('Full URL:', window.location.href);
     console.log('===========================');
+    
+    // Show alert if no users found
+    if (users.length === 0) {
+        console.warn('⚠️ NO USERS FOUND in localStorage!');
+        console.warn('Make sure users are signing up on the same domain as this admin page.');
+    }
     
     loadOverviewData();
 }
@@ -115,6 +126,8 @@ function loadDashboardData() {
 function loadOverviewData() {
     const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
     const allReviews = JSON.parse(localStorage.getItem('customerReviews') || '[]');
+    
+    console.log('📊 Loading overview - Users found:', users.length);
     
     // Calculate total orders and revenue
     let totalOrders = 0;
