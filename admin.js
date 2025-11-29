@@ -1,9 +1,8 @@
 // Admin Authentication
-// IMPORTANT: Change these credentials for production!
-const ADMIN_CREDENTIALS = {
-    username: 'seeldataadmin',
-    password: 'SeelData@2025!Secure#Admin'
-};
+// Credentials are now stored securely on the server
+const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000/api' 
+    : 'https://seeldatabundle.me/api';
 
 // Check if admin is logged in
 function checkAdminAuth() {
@@ -19,24 +18,51 @@ function checkAdminAuth() {
 }
 
 // Handle admin login
-function handleAdminLogin(event) {
+async function handleAdminLogin(event) {
     event.preventDefault();
     
     const username = document.getElementById('adminUsername').value;
     const password = document.getElementById('adminPassword').value;
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
     
-    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-        // Create admin session
-        localStorage.setItem('adminSession', JSON.stringify({
-            loggedIn: true,
-            timestamp: Date.now(),
-            username: username
-        }));
+    // Show loading state
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+    submitBtn.disabled = true;
+    
+    try {
+        // Call backend API for authentication
+        const response = await fetch(`${API_URL}/admin-login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        });
         
-        showAdminDashboard();
-        loadDashboardData();
-    } else {
-        alert('Invalid credentials! Please try again.');
+        const result = await response.json();
+        
+        if (result.success) {
+            // Create admin session with token from server
+            localStorage.setItem('adminSession', JSON.stringify({
+                loggedIn: true,
+                timestamp: Date.now(),
+                username: username,
+                token: result.token
+            }));
+            
+            showAdminDashboard();
+            loadDashboardData();
+        } else {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            alert('Invalid credentials! Please try again.');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        alert('Login failed. Please check your connection and try again.');
     }
 }
 
