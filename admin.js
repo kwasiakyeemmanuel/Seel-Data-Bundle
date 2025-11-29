@@ -124,10 +124,17 @@ function loadDashboardData() {
 
 // Load overview data
 function loadOverviewData() {
-    const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+    // Force fresh read from localStorage
+    const usersJson = localStorage.getItem('seelDataUsers');
+    console.log('📦 Raw localStorage data for seelDataUsers:', usersJson);
+    
+    const users = JSON.parse(usersJson || '[]');
     const allReviews = JSON.parse(localStorage.getItem('customerReviews') || '[]');
     
     console.log('📊 Loading overview - Users found:', users.length);
+    console.log('👥 User details:', users.map(u => ({ name: u.name, email: u.email })));
+    console.log('🌐 Current domain:', window.location.hostname);
+    console.log('🔗 Current URL:', window.location.href);
     
     // Calculate total orders and revenue
     let totalOrders = 0;
@@ -145,8 +152,12 @@ function loadOverviewData() {
         });
     });
     
-    // Update stats
-    document.getElementById('totalUsers').textContent = users.length;
+    // Update stats with animation
+    const userCountElement = document.getElementById('totalUsers');
+    userCountElement.textContent = users.length;
+    userCountElement.style.animation = 'pulse 0.5s';
+    setTimeout(() => userCountElement.style.animation = '', 500);
+    
     document.getElementById('totalOrders').textContent = totalOrders;
     document.getElementById('totalRevenue').textContent = 'GH₵' + totalRevenue.toFixed(2);
     document.getElementById('totalReviews').textContent = allReviews.length;
