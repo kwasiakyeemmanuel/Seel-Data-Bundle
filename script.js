@@ -3196,7 +3196,7 @@ function cancelOTPVerification(email) {
 // Email Notification System
 async function sendEmailNotification(recipientEmail, subject, htmlContent) {
     // Using Web3Forms - Free email service (no backend needed)
-    const WEB3FORMS_KEY = 'YOUR_WEB3FORMS_ACCESS_KEY'; // Get free key from https://web3forms.com
+    const WEB3FORMS_KEY = 'bca72c74-a0ae-49a6-b8f6-0f8632c2f7a5'; // Get free key from https://web3forms.com
     
     try {
         const response = await fetch('https://api.web3forms.com/submit', {
