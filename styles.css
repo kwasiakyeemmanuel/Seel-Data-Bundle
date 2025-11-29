@@ -167,8 +167,8 @@ body {
 }
 
 .logo img {
-    width: 55px;
-    height: 55px;
+    width: 65px;
+    height: 65px;
     object-fit: cover;
     border-radius: 8px;
     display: block;
@@ -1096,8 +1096,8 @@ body {
     }
 
     .logo img {
-        width: 48px;
-        height: 48px;
+        width: 58px;
+        height: 58px;
     }
 
     .logo i {
