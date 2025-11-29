@@ -1,7 +1,8 @@
 // Admin Authentication
+// IMPORTANT: Change these credentials for production!
 const ADMIN_CREDENTIALS = {
-    username: 'admin',
-    password: 'admin123'
+    username: 'seeldataadmin',
+    password: 'SeelData@2025!Secure#Admin'
 };
 
 // Check if admin is logged in
