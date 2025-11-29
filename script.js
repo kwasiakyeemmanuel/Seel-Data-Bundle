@@ -433,6 +433,11 @@ function showServicesSection() {
         servicesSection.style.filter = 'none';
         servicesSection.style.pointerEvents = 'auto';
         servicesSection.style.userSelect = 'auto';
+        
+        // Scroll to services section
+        setTimeout(() => {
+            servicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
     }
     
     if (overlay) {
@@ -499,6 +504,9 @@ function updateHeaderForLoggedInUser(user) {
                     </a>
                     <a href="#" onclick="event.preventDefault(); showFAQ();">
                         <i class="fas fa-question-circle"></i> Help & FAQ
+                    </a>
+                    <a href="#" onclick="event.preventDefault(); showDeleteAccountModal();" style="color: #e74c3c;">
+                        <i class="fas fa-user-times"></i> Delete Account
                     </a>
                     <a href="#" onclick="event.preventDefault(); handleLogout();" style="color: var(--accent-color);">
                         <i class="fas fa-sign-out-alt"></i> Logout
@@ -857,15 +865,11 @@ function handleSignup(event) {
         const userWithoutPassword = { ...userData };
         delete userWithoutPassword.password;
         userWithoutPassword.emailVerified = false;
-        localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
-        
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
         
-        // Close modal and update UI
+        // Close modal and show success message
         closeSignupModal();
-        updateHeaderForLoggedInUser(userWithoutPassword);
-        showServicesSection();
         
         // Show success message
         const successModal = document.createElement('div');
@@ -879,8 +883,9 @@ function handleSignup(event) {
                 </div>
                 <h2>Account Created!</h2>
                 <p>Welcome to Seel Data, ${userWithoutPassword.name}!</p>
-                <button class="btn btn-primary btn-block" onclick="closeSignupSuccessModal()">
-                    Start Shopping
+                <p style="color: #666; font-size: 14px; margin-top: 10px;">Please login to access our services</p>
+                <button class="btn btn-primary btn-block" onclick="closeSignupSuccessModal(); showLoginModal();">
+                    Login Now
                 </button>
             </div>
         `;
@@ -907,6 +912,131 @@ function closeSignupSuccessModal() {
 function handleLogout() {
     localStorage.removeItem('currentUser');
     location.reload();
+}
+
+// Show delete account modal
+function showDeleteAccountModal() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (!currentUser) {
+        toast.error('Please login to delete your account');
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'deleteAccountModal';
+    modal.innerHTML = `
+        <div class="modal-content purchase-modal">
+            <div class="modal-header" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h2>Delete Account</h2>
+                <button class="close-btn" onclick="closeDeleteAccountModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong><i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i> Warning!</strong>
+                    <p style="margin: 10px 0 0 0; color: #856404;">
+                        This action cannot be undone. All your data including orders, favorites, and settings will be permanently deleted.
+                    </p>
+                </div>
+                
+                <form id="deleteAccountForm" onsubmit="handleDeleteAccount(event)">
+                    <div class="form-group">
+                        <label for="deletePassword">
+                            <i class="fas fa-lock"></i> Confirm Your Password *
+                        </label>
+                        <input 
+                            type="password" 
+                            id="deletePassword" 
+                            name="password" 
+                            placeholder="Enter your password to confirm" 
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input 
+                                type="checkbox" 
+                                id="deleteConfirmCheck" 
+                                required
+                                style="width: auto;"
+                            >
+                            <span>I understand that this action is permanent and cannot be reversed</span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeDeleteAccountModal()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn" style="background: #e74c3c; color: white;">
+                            <i class="fas fa-trash"></i> Delete My Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+}
+
+// Close delete account modal
+function closeDeleteAccountModal() {
+    const modal = document.getElementById('deleteAccountModal');
+    if (modal) {
+        modal.style.display = 'none';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+// Handle delete account
+function handleDeleteAccount(event) {
+    event.preventDefault();
+    
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const password = document.getElementById('deletePassword').value;
+    
+    // Get all users
+    const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+    
+    // Find user with password
+    const user = users.find(u => u.email === currentUser.email && u.password === password);
+    
+    if (!user) {
+        toast.error('Incorrect password. Please try again.');
+        return;
+    }
+    
+    // Show final confirmation
+    if (!confirm('Are you absolutely sure you want to delete your account? This cannot be undone.')) {
+        return;
+    }
+    
+    // Remove user from users array
+    const updatedUsers = users.filter(u => u.email !== currentUser.email);
+    localStorage.setItem('seelDataUsers', JSON.stringify(updatedUsers));
+    
+    // Remove user-specific data
+    localStorage.removeItem('userOrders_' + currentUser.email);
+    localStorage.removeItem('userFavorites_' + currentUser.email);
+    localStorage.removeItem('supportTickets_' + currentUser.email);
+    localStorage.removeItem('emailVerification_' + currentUser.email);
+    localStorage.removeItem('twoFactorAuth_' + currentUser.email);
+    localStorage.removeItem('currentUser');
+    
+    // Close modal
+    closeDeleteAccountModal();
+    
+    // Show success message and reload
+    toast.success('Your account has been deleted successfully');
+    
+    setTimeout(() => {
+        location.reload();
+    }, 2000);
 }
 
 // Show forgot password modal
