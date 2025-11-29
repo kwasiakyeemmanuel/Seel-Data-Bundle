@@ -661,6 +661,22 @@ function handleLogin(event) {
                 // Save user to localStorage for session
                 localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
                 
+                // Check if this is a new user or returning user
+                const isNewUser = sessionStorage.getItem('isNewUser') === 'true';
+                const signupTime = sessionStorage.getItem('signupTime');
+                const timeSinceSignup = signupTime ? Date.now() - parseInt(signupTime) : Infinity;
+                
+                // Show "Welcome" if new user within 3 minutes, otherwise "Welcome Back"
+                const isRecentSignup = isNewUser && timeSinceSignup < 180000; // 3 minutes = 180000ms
+                const welcomeMessage = isRecentSignup ? 'Welcome!' : 'Welcome Back!';
+                const subMessage = isRecentSignup ? 'Your account is ready to use.' : 'You have successfully logged in.';
+                
+                // Clear the new user flag if it's been more than 3 minutes
+                if (timeSinceSignup >= 180000) {
+                    sessionStorage.removeItem('isNewUser');
+                    sessionStorage.removeItem('signupTime');
+                }
+                
                 // Close modal and update UI
                 closeLoginModal();
                 updateHeaderForLoggedInUser(userWithoutPassword);
@@ -676,8 +692,8 @@ function handleLogin(event) {
                     <div class="success-icon">
                         <i class="fas fa-check-circle"></i>
                     </div>
-                    <h2>Welcome Back!</h2>
-                    <p>You have successfully logged in.</p>
+                    <h2>${welcomeMessage}</h2>
+                    <p>${subMessage}</p>
                     <button class="btn btn-primary btn-block" onclick="closeLoginSuccessModal()">
                         Continue
                     </button>
@@ -927,6 +943,10 @@ function handleSignup(event) {
         // Close signup modal
         closeSignupModal();
         
+        // Mark this as a new signup (not a returning user)
+        sessionStorage.setItem('isNewUser', 'true');
+        sessionStorage.setItem('signupTime', Date.now().toString());
+        
         // Show success message
         const successModal = document.createElement('div');
         successModal.className = 'modal';
@@ -964,6 +984,8 @@ function closeSignupSuccessModal() {
 // Handle logout
 function handleLogout() {
     localStorage.removeItem('currentUser');
+    sessionStorage.removeItem('isNewUser');
+    sessionStorage.removeItem('signupTime');
     location.reload();
 }
 
