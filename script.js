@@ -841,10 +841,18 @@ function handleSignup(event) {
     
     // Create account directly without email verification
     setTimeout(() => {
+        console.log('🔐 SIGNUP DEBUG: Starting account creation...');
+        console.log('📧 Email:', userData.email);
+        console.log('📱 Phone:', userData.phone);
+        console.log('👤 Name:', userData.name);
+        
         const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+        console.log('📊 Current users in database:', users.length);
+        
         const existingUser = users.find(u => u.email === userData.email || u.phone === userData.phone);
         
         if (existingUser) {
+            console.log('❌ User already exists!');
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
             toast.error('Account with this email or phone already exists!');
@@ -854,6 +862,16 @@ function handleSignup(event) {
         // Add new user to the array
         users.push(userData);
         localStorage.setItem('seelDataUsers', JSON.stringify(users));
+        
+        console.log('✅ User saved to localStorage!');
+        console.log('📊 Total users now:', users.length);
+        console.log('🌐 Domain:', window.location.hostname);
+        console.log('🔗 Full URL:', window.location.href);
+        
+        // Verify the save
+        const verifyUsers = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+        console.log('✔️ Verification - Users in storage:', verifyUsers.length);
+        console.log('✔️ Last user saved:', verifyUsers[verifyUsers.length - 1]);
         
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
