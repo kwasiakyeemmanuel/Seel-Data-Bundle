@@ -2939,16 +2939,16 @@ Your verification code is: ${otp}
 
 Please enter this code on the signup page to complete your registration.
 
-⏱️ This code will expire in 5 minutes.
+This code will expire in 5 minutes.
 
 If you didn't sign up for Seel Data Bundle, please ignore this email.
 
 ---
 Once verified, you'll have access to:
-✅ Instant data bundle purchases
-✅ Exclusive deals and discounts  
-✅ Quick recharge history
-✅ 24/7 customer support
+- Instant data bundle purchases
+- Exclusive deals and discounts  
+- Quick recharge history
+- 24/7 customer support
 
 Need help? Contact us on WhatsApp: +233 53 792 2905
 
@@ -2956,8 +2956,8 @@ Best regards,
 Seel Data Bundle Team`;
     
     try {
-        // Using EmailJS for sending emails to users
-        const result = await sendEmailViaEmailJS(email, name, otp, subject, message);
+        // Using ElasticEmail API for sending emails to users
+        const result = await sendEmailToUser(email, name, subject, message, otp);
         
         if (!result.success) {
             console.error('Email sending failed:', result.error);
@@ -2973,45 +2973,48 @@ Seel Data Bundle Team`;
     }
 }
 
-// EmailJS Implementation for sending emails to users
-async function sendEmailViaEmailJS(recipientEmail, recipientName, otp, subject, message) {
+// Send email directly to users using ElasticEmail API
+async function sendEmailToUser(toEmail, toName, subject, message, otp) {
     try {
-        // EmailJS configuration
-        const serviceID = 'service_seeldata';
-        const templateID = 'template_otp';
-        const publicKey = 'YOUR_EMAILJS_PUBLIC_KEY'; // Get from https://www.emailjs.com
+        // ElasticEmail API - 100 free emails per day
+        const apiKey = 'YOUR_ELASTICEMAIL_API_KEY'; // Get free key from https://elasticemail.com
         
-        const templateParams = {
-            to_email: recipientEmail,
-            to_name: recipientName,
+        const emailData = {
+            from: 'noreply@seeldatabundle.me',
+            fromName: 'Seel Data Bundle',
+            to: toEmail,
             subject: subject,
-            otp_code: otp,
-            message: message
+            bodyText: message,
+            isTransactional: true
         };
         
-        const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        const response = await fetch('https://api.elasticemail.com/v2/email/send', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: JSON.stringify({
-                service_id: serviceID,
-                template_id: templateID,
-                user_id: publicKey,
-                template_params: templateParams
+            body: new URLSearchParams({
+                apikey: apiKey,
+                from: emailData.from,
+                fromName: emailData.fromName,
+                to: toEmail,
+                subject: subject,
+                bodyText: message,
+                isTransactional: true
             })
         });
         
-        if (response.ok) {
-            console.log('✅ Email sent successfully to:', recipientEmail);
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('✅ Email sent successfully to:', toEmail);
             return { success: true };
         } else {
-            const errorText = await response.text();
-            console.error('❌ Email failed:', errorText);
-            return { success: false, error: errorText };
+            console.error('❌ Email failed:', result.error);
+            return { success: false, error: result.error };
         }
     } catch (error) {
-        console.error('EmailJS Error:', error);
+        console.error('Email Error:', error);
         return { success: false, error: error.message };
     }
 }
