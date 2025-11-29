@@ -1688,8 +1688,8 @@ function showSuccessModal(data, paymentRef) {
             </div>
             
             <div class="success-message">
-                <i class="fas fa-clock"></i>
-                <p>Data will be delivered within 5 minutes</p>
+                <i class="fas fa-check-double"></i>
+                <p>Fast and reliable delivery to your satisfaction</p>
             </div>
             
             <button class="btn btn-primary btn-block" onclick="closeSuccessModal()">
@@ -2051,7 +2051,7 @@ function showFAQ() {
     const faqs = [
         {
             q: 'How long does delivery take?',
-            a: 'Data bundles are delivered within 5 minutes after successful payment.'
+            a: 'Data bundles are delivered fast and reliably to your satisfaction after successful payment.'
         },
         {
             q: 'What payment methods do you accept?',
@@ -2815,7 +2815,7 @@ Network: ${orderData.service}
 Phone: ${orderData.phoneNumber}
 Amount: GH₵${orderData.amount}
 
-Your data will be delivered within 5-10 minutes.
+Your data will be delivered fast and reliably to your satisfaction.
 
 Thank you for choosing Seel Data!
     `.trim();
