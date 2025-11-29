@@ -836,15 +836,12 @@ function handleSignup(event) {
     
     const submitBtn = event.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
     submitBtn.disabled = true;
     
-    // Simulate API delay and use localStorage instead of PHP backend
+    // Check if email or phone already exists BEFORE sending OTP
     setTimeout(() => {
-        // Get existing users from localStorage
         const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
-        
-        // Check if email or phone already exists
         const existingUser = users.find(u => u.email === userData.email || u.phone === userData.phone);
         
         if (existingUser) {
@@ -854,49 +851,31 @@ function handleSignup(event) {
             return;
         }
         
-        // Add new user to the array
-        users.push(userData);
-        localStorage.setItem('seelDataUsers', JSON.stringify(users));
+        // Store user data temporarily (not in seelDataUsers yet)
+        const pendingSignup = {
+            userData: userData,
+            otp: generateSignupOTP(),
+            timestamp: Date.now(),
+            expiresIn: 5 * 60 * 1000 // 5 minutes
+        };
+        localStorage.setItem(`pendingSignup_${userData.email}`, JSON.stringify(pendingSignup));
         
-        // Generate email verification token
-        const verificationToken = generateVerificationToken(userData.email);
-        
-        // Save current user (without password for security)
-        const userWithoutPassword = { ...userData };
-        delete userWithoutPassword.password;
-        userWithoutPassword.emailVerified = false;
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-        
-        // Close modal and show success message
-        closeSignupModal();
-        
-        // Show success message
-        const successModal = document.createElement('div');
-        successModal.className = 'modal';
-        successModal.id = 'signupSuccessModal';
-        successModal.innerHTML = `
-            <div class="modal-content success-modal">
-                <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
-                <div class="success-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <h2>Account Created!</h2>
-                <p>Welcome to Seel Data, ${userWithoutPassword.name}!</p>
-                <p style="color: #666; font-size: 14px; margin-top: 10px;">Please login to access our services</p>
-                <button class="btn btn-primary btn-block" onclick="closeSignupSuccessModal(); showLoginModal();">
-                    Login Now
-                </button>
-            </div>
-        `;
-        document.body.appendChild(successModal);
-        successModal.style.display = 'flex';
-        
-        // Send verification email after 1 second
-        setTimeout(() => {
-            sendVerificationEmail(userData.email, verificationToken);
-        }, 1000);
-    }, 800);
+        // Send OTP via email
+        sendSignupOTP(userData.email, userData.name, pendingSignup.otp).then(success => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            
+            if (success) {
+                // Close signup modal and show OTP verification modal
+                closeSignupModal();
+                showOTPVerificationModal(userData.email, userData.name);
+            } else {
+                toast.error('Failed to send verification code. Please try again.');
+                // Clean up pending signup
+                localStorage.removeItem(`pendingSignup_${userData.email}`);
+            }
+        });
+    }, 500);
 }
 
 // Close signup success modal
@@ -2939,6 +2918,224 @@ function show2FASetup() {
         </div>
     `;
     document.body.appendChild(modal);
+}
+
+// Signup OTP Verification System
+function generateSignupOTP() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function sendSignupOTP(email, name, otp) {
+    const subject = '🔐 Verify Your Email - Seel Data Bundle';
+    const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f8f9fa;">
+            <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #667eea; margin: 0;">🎉 Welcome to Seel Data Bundle!</h1>
+                </div>
+                
+                <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Hi ${name},</p>
+                
+                <p style="font-size: 16px; color: #333; margin-bottom: 30px;">
+                    Thank you for signing up! To complete your registration, please verify your email address using the verification code below:
+                </p>
+                
+                <div style="background: #f0f4ff; padding: 30px; border-radius: 8px; text-align: center; margin: 30px 0;">
+                    <p style="font-size: 14px; color: #666; margin-bottom: 10px; font-weight: 600;">Your Verification Code:</p>
+                    <div style="font-size: 48px; font-weight: 700; color: #667eea; letter-spacing: 12px; margin: 20px 0;">
+                        ${otp}
+                    </div>
+                    <p style="font-size: 13px; color: #999; margin-top: 15px;">⏱️ Code expires in 5 minutes</p>
+                </div>
+                
+                <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8; margin: 20px 0;">
+                    <p style="margin: 0; color: #0c5460; font-size: 14px;">
+                        <strong>ℹ️ Note:</strong> Enter this code on the signup page to complete your account creation.
+                    </p>
+                </div>
+                
+                <p style="font-size: 14px; color: #666; margin-top: 20px;">
+                    If you didn't sign up for Seel Data Bundle, please ignore this email.
+                </p>
+                
+                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+                    <p style="font-size: 14px; color: #333; margin-bottom: 10px;">
+                        Once verified, you'll have access to:
+                    </p>
+                    <div style="text-align: left; display: inline-block;">
+                        <p style="font-size: 13px; color: #666; margin: 5px 0;">✅ Instant data bundle purchases</p>
+                        <p style="font-size: 13px; color: #666; margin: 5px 0;">✅ Exclusive deals and discounts</p>
+                        <p style="font-size: 13px; color: #666; margin: 5px 0;">✅ Quick recharge history</p>
+                        <p style="font-size: 13px; color: #666; margin: 5px 0;">✅ 24/7 customer support</p>
+                    </div>
+                    <p style="font-size: 12px; color: #999; margin-top: 20px;">Need help? Contact us on WhatsApp: +233 53 792 2905</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    try {
+        const result = await sendEmailNotification(email, subject, htmlContent);
+        return result.success;
+    } catch (error) {
+        console.error('Failed to send signup OTP:', error);
+        return false;
+    }
+}
+
+function showOTPVerificationModal(email, name) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'otpVerificationModal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close" onclick="cancelOTPVerification('${email}')">&times;</span>
+            <div style="text-align: center; padding: 20px;">
+                <i class="fas fa-envelope-open-text" style="font-size: 64px; color: var(--primary-color); margin-bottom: 20px;"></i>
+                <h2 style="margin-bottom: 10px;">Verify Your Email</h2>
+                <p style="color: #666; margin-bottom: 10px;">
+                    Hi <strong>${name}</strong>!
+                </p>
+                <p style="color: #666; margin-bottom: 20px;">
+                    We've sent a verification code to:<br>
+                    <strong>${email}</strong>
+                </p>
+                <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+                    Check your email inbox (and spam folder) for the 6-digit code
+                </p>
+                <div style="margin-top: 20px;">
+                    <input type="text" id="signupOTPInput" placeholder="Enter 6-digit code" maxlength="6"
+                           style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 18px; text-align: center; letter-spacing: 4px; margin-bottom: 15px;"
+                           oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    <button onclick="verifySignupOTP('${email}')"
+                            style="padding: 12px 24px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; width: 100%; margin-bottom: 10px;">
+                        <i class="fas fa-check-circle"></i> Verify & Create Account
+                    </button>
+                    <button onclick="resendSignupOTP('${email}', '${name}')"
+                            style="padding: 10px 20px; background: transparent; color: var(--primary-color); border: 2px solid var(--primary-color); border-radius: 8px; cursor: pointer; font-size: 14px; width: 100%;">
+                        <i class="fas fa-redo"></i> Resend Code
+                    </button>
+                </div>
+                <p style="font-size: 12px; color: #999; margin-top: 20px;">
+                    Code expires in 5 minutes
+                </p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Auto-focus on OTP input
+    setTimeout(() => {
+        document.getElementById('signupOTPInput')?.focus();
+    }, 300);
+}
+
+function verifySignupOTP(email) {
+    const enteredOTP = document.getElementById('signupOTPInput')?.value;
+    
+    if (!enteredOTP || enteredOTP.length !== 6) {
+        toast.error('Please enter a valid 6-digit code');
+        return;
+    }
+    
+    // Get pending signup data
+    const pendingData = localStorage.getItem(`pendingSignup_${email}`);
+    if (!pendingData) {
+        toast.error('Verification session expired. Please sign up again.');
+        closeOTPVerificationModal();
+        return;
+    }
+    
+    const pending = JSON.parse(pendingData);
+    
+    // Check if expired
+    if (Date.now() - pending.timestamp > pending.expiresIn) {
+        toast.error('Verification code expired. Please sign up again.');
+        localStorage.removeItem(`pendingSignup_${email}`);
+        closeOTPVerificationModal();
+        return;
+    }
+    
+    // Verify OTP
+    if (enteredOTP !== pending.otp) {
+        toast.error('Invalid verification code. Please try again.');
+        return;
+    }
+    
+    // OTP verified! Now create the account
+    const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+    users.push(pending.userData);
+    localStorage.setItem('seelDataUsers', JSON.stringify(users));
+    
+    // Clean up pending signup
+    localStorage.removeItem(`pendingSignup_${email}`);
+    
+    // Close OTP modal
+    closeOTPVerificationModal();
+    
+    // Show success message
+    const successModal = document.createElement('div');
+    successModal.className = 'modal';
+    successModal.id = 'signupSuccessModal';
+    successModal.innerHTML = `
+        <div class="modal-content success-modal">
+            <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2>Account Created Successfully!</h2>
+            <p>Welcome to Seel Data, ${pending.userData.name}! 🎉</p>
+            <p style="color: #666; font-size: 14px; margin-top: 10px;">Your email has been verified. Please login to access our services.</p>
+            <button class="btn btn-primary btn-block" onclick="closeSignupSuccessModal(); showLoginModal();">
+                Login Now
+            </button>
+        </div>
+    `;
+    document.body.appendChild(successModal);
+    successModal.style.display = 'flex';
+    
+    toast.success('Email verified successfully! 🎉');
+}
+
+async function resendSignupOTP(email, name) {
+    const pendingData = localStorage.getItem(`pendingSignup_${email}`);
+    if (!pendingData) {
+        toast.error('Session expired. Please sign up again.');
+        closeOTPVerificationModal();
+        return;
+    }
+    
+    // Generate new OTP
+    const newOTP = generateSignupOTP();
+    const pending = JSON.parse(pendingData);
+    pending.otp = newOTP;
+    pending.timestamp = Date.now();
+    localStorage.setItem(`pendingSignup_${email}`, JSON.stringify(pending));
+    
+    // Send new OTP
+    const success = await sendSignupOTP(email, name, newOTP);
+    
+    if (success) {
+        toast.success('New verification code sent! Check your email.');
+    } else {
+        toast.error('Failed to resend code. Please try again.');
+    }
+}
+
+function closeOTPVerificationModal() {
+    const modal = document.getElementById('otpVerificationModal');
+    if (modal) {
+        modal.style.display = 'none';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+function cancelOTPVerification(email) {
+    // Clean up pending signup
+    localStorage.removeItem(`pendingSignup_${email}`);
+    closeOTPVerificationModal();
+    toast.info('Signup cancelled. You can try again anytime.');
 }
 
 // Purchase SMS Confirmation System
