@@ -124,32 +124,61 @@ function loadDashboardData() {
 
 // Load overview data
 function loadOverviewData() {
-    // Force fresh read from localStorage
-    const usersJson = localStorage.getItem('seelDataUsers');
-    console.log('📦 Raw localStorage data for seelDataUsers:', usersJson);
+    console.log('📊 Loading overview data...');
     
-    const users = JSON.parse(usersJson || '[]');
-    const allReviews = JSON.parse(localStorage.getItem('customerReviews') || '[]');
-    
-    console.log('📊 Loading overview - Users found:', users.length);
-    console.log('👥 User details:', users.map(u => ({ name: u.name, email: u.email })));
-    console.log('🌐 Current domain:', window.location.hostname);
-    console.log('🔗 Current URL:', window.location.href);
-    
-    // Calculate total orders and revenue
-    let totalOrders = 0;
-    let totalRevenue = 0;
-    let allOrders = [];
-    
-    users.forEach(user => {
-        const userOrders = JSON.parse(localStorage.getItem('userOrders_' + user.email) || '[]');
-        totalOrders += userOrders.length;
-        allOrders = allOrders.concat(userOrders);
-        
-        userOrders.forEach(order => {
-            const amount = parseFloat(order.amount || order.bundleSize.split('GH₵')[1] || 0);
-            totalRevenue += amount;
+    // Use Firebase if available
+    if (window.firebaseDB && window.FirebaseDB) {
+        console.log('🔥 Fetching data from Firebase...');
+        Promise.all([
+            window.FirebaseDB.getAllUsers(),
+            window.FirebaseDB.getAllOrders(),
+            window.FirebaseDB.getAllReviews()
+        ]).then(([usersResult, ordersResult, reviewsResult]) => {
+            const users = usersResult.users || [];
+            const allOrders = ordersResult.orders || [];
+            const allReviews = reviewsResult.reviews || [];
+            
+            console.log('📊 Firebase data - Users:', users.length, 'Orders:', allOrders.length, 'Reviews:', allReviews.length);
+            
+            displayOverviewStats(users, allOrders, allReviews);
+        }).catch(error => {
+            console.error('❌ Error loading Firebase data:', error);
+            toast.error('Error loading dashboard data');
         });
+    } else {
+        console.log('💾 Firebase not available, using localStorage...');
+        // Force fresh read from localStorage
+        const usersJson = localStorage.getItem('seelDataUsers');
+        console.log('📦 Raw localStorage data for seelDataUsers:', usersJson);
+        
+        const users = JSON.parse(usersJson || '[]');
+        const allReviews = JSON.parse(localStorage.getItem('customerReviews') || '[]');
+        
+        console.log('📊 Loading overview - Users found:', users.length);
+        console.log('👥 User details:', users.map(u => ({ name: u.name, email: u.email })));
+        console.log('🌐 Current domain:', window.location.hostname);
+        console.log('🔗 Current URL:', window.location.href);
+        
+        // Calculate total orders and revenue
+        let totalOrders = 0;
+        let allOrders = [];
+        
+        users.forEach(user => {
+            const userOrders = JSON.parse(localStorage.getItem('userOrders_' + user.email) || '[]');
+            totalOrders += userOrders.length;
+            allOrders = allOrders.concat(userOrders);
+        });
+        
+        displayOverviewStats(users, allOrders, allReviews);
+    }
+}
+
+function displayOverviewStats(users, allOrders, allReviews) {
+    // Calculate revenue
+    let totalRevenue = 0;
+    allOrders.forEach(order => {
+        const amount = parseFloat(order.amount || order.bundleSize?.split('GH₵')[1] || 0);
+        totalRevenue += amount;
     });
     
     // Update stats with animation
@@ -158,7 +187,7 @@ function loadOverviewData() {
     userCountElement.style.animation = 'pulse 0.5s';
     setTimeout(() => userCountElement.style.animation = '', 500);
     
-    document.getElementById('totalOrders').textContent = totalOrders;
+    document.getElementById('totalOrders').textContent = allOrders.length;
     document.getElementById('totalRevenue').textContent = 'GH₵' + totalRevenue.toFixed(2);
     document.getElementById('totalReviews').textContent = allReviews.length;
     
@@ -203,35 +232,68 @@ function loadOverviewData() {
 
 // Load users data
 function loadUsersData() {
-    const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
-    
-    console.log('👥 Loading users data. Found:', users.length, 'users');
+    console.log('👥 Loading users data...');
     console.log('🌐 Current domain:', window.location.hostname);
-    console.log('📦 Full localStorage data:', localStorage);
     
     // Add domain warning banner
     const domainWarning = `
         <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-            <strong>⚠️ Important:</strong> You are viewing admin from <strong>${window.location.hostname}</strong><br>
-            <small style="color: #856404;">Users registered on different domains (localhost vs seeldatabundle.me) will NOT appear here due to browser security.</small><br>
+            <strong>⚠️ Data Source:</strong> ${window.firebaseDB ? 'Firebase (Centralized Database)' : 'localStorage (Browser Only)'}<br>
+            <small style="color: #856404;">Current domain: <strong>${window.location.hostname}</strong></small><br>
             <button class="btn btn-primary" onclick="loadUsersData()" style="margin-top: 10px;">
                 <i class="fas fa-sync"></i> Refresh Users
             </button>
         </div>
     `;
     
-    if (users.length === 0) {
-        document.getElementById('usersTable').innerHTML = domainWarning + `
-            <div class="empty-state">
-                <i class="fas fa-users"></i>
-                <p>No users registered yet on <strong>${window.location.hostname}</strong></p>
-                <small style="color: #999; margin-top: 10px; display: block;">
-                    Users must sign up on <strong>${window.location.hostname}</strong> to appear here.
-                </small>
-            </div>`;
-        return;
+    // Use Firebase if available, otherwise fallback to localStorage
+    if (window.firebaseDB && window.FirebaseDB) {
+        console.log('🔥 Fetching users from Firebase...');
+        window.FirebaseDB.getAllUsers().then(result => {
+            const users = result.users || [];
+            console.log('👥 Firebase users found:', users.length);
+            
+            if (users.length === 0) {
+                document.getElementById('usersTable').innerHTML = domainWarning + `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <p>No users registered yet in Firebase</p>
+                    </div>`;
+                return;
+            }
+            
+            displayUsersTable(users, domainWarning);
+        }).catch(error => {
+            console.error('❌ Error loading users from Firebase:', error);
+            document.getElementById('usersTable').innerHTML = domainWarning + `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Error loading users from Firebase</p>
+                    <small>${error.message}</small>
+                </div>`;
+        });
+    } else {
+        console.log('💾 Firebase not available, using localStorage...');
+        const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+        console.log('👥 localStorage users found:', users.length);
+        
+        if (users.length === 0) {
+            document.getElementById('usersTable').innerHTML = domainWarning + `
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <p>No users registered yet on <strong>${window.location.hostname}</strong></p>
+                    <small style="color: #999; margin-top: 10px; display: block;">
+                        Users must sign up on <strong>${window.location.hostname}</strong> to appear here.
+                    </small>
+                </div>`;
+            return;
+        }
+        
+        displayUsersTable(users, domainWarning);
     }
-    
+}
+
+function displayUsersTable(users, domainWarning) {
     const tableHTML = domainWarning + `
         <div class="data-table">
             <table>

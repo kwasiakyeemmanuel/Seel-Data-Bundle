@@ -629,35 +629,47 @@ function handleLogin(event) {
     submitBtn.disabled = true;
     
     // Simulate network delay for better UX
-    setTimeout(() => {
-        // Get users from localStorage
-        const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
-        
-        // Find user by email or phone
-        const user = users.find(u => 
-            (u.email === email || u.phone === email) && u.password === password
-        );
-        
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-        
-        if (user) {
-            // Remove password before saving to currentUser
-            const userWithoutPassword = {...user};
-            delete userWithoutPassword.password;
+    setTimeout(async () => {
+        try {
+            let user = null;
             
-            // Save user to localStorage
-            localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+            // Try Firebase first if available
+            if (window.firebaseDB && window.FirebaseDB) {
+                console.log('🔥 Using Firebase for login...');
+                const result = await window.FirebaseDB.getUser(email);
+                if (result.success && result.user && result.user.password === password) {
+                    user = result.user;
+                    console.log('✅ User authenticated via Firebase');
+                }
+            } else {
+                // Fallback to localStorage
+                console.log('💾 Firebase not available, using localStorage...');
+                const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+                user = users.find(u => 
+                    (u.email === email || u.phone === email) && u.password === password
+                );
+            }
             
-            // Close modal and update UI
-            closeLoginModal();
-            updateHeaderForLoggedInUser(userWithoutPassword);
-            showServicesSection();
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
             
-            // Show success message
-            const successModal = document.createElement('div');
-            successModal.className = 'modal';
-            successModal.id = 'loginSuccessModal';
+            if (user) {
+                // Remove password before saving to currentUser
+                const userWithoutPassword = {...user};
+                delete userWithoutPassword.password;
+                
+                // Save user to localStorage for session
+                localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+                
+                // Close modal and update UI
+                closeLoginModal();
+                updateHeaderForLoggedInUser(userWithoutPassword);
+                showServicesSection();
+                
+                // Show success message
+                const successModal = document.createElement('div');
+                successModal.className = 'modal';
+                successModal.id = 'loginSuccessModal';
             successModal.innerHTML = `
                 <div class="modal-content success-modal">
                     <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
@@ -675,6 +687,12 @@ function handleLogin(event) {
             successModal.style.display = 'flex';
         } else {
             toast.error('Invalid email/phone or password. Please try again.');
+        }
+        } catch (error) {
+            console.error('❌ Login error:', error);
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            toast.error('Login failed. Please try again.');
         }
     }, 800);
 }
@@ -840,38 +858,68 @@ function handleSignup(event) {
     submitBtn.disabled = true;
     
     // Create account directly without email verification
-    setTimeout(() => {
+    setTimeout(async () => {
         console.log('🔐 SIGNUP DEBUG: Starting account creation...');
         console.log('📧 Email:', userData.email);
         console.log('📱 Phone:', userData.phone);
         console.log('👤 Name:', userData.name);
         
-        const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
-        console.log('📊 Current users in database:', users.length);
-        
-        const existingUser = users.find(u => u.email === userData.email || u.phone === userData.phone);
-        
-        if (existingUser) {
-            console.log('❌ User already exists!');
+        try {
+            // Try Firebase first if available
+            if (window.firebaseDB && window.FirebaseDB) {
+                console.log('🔥 Using Firebase for signup...');
+                
+                // Check if user exists in Firebase
+                const existingUserResult = await window.FirebaseDB.getUser(userData.email);
+                if (existingUserResult.success && existingUserResult.user) {
+                    console.log('❌ User already exists in Firebase!');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    toast.error('Account with this email already exists!');
+                    return;
+                }
+                
+                // Create user in Firebase
+                const result = await window.FirebaseDB.createUser(userData);
+                if (result.success) {
+                    console.log('✅ User saved to Firebase!');
+                } else {
+                    throw new Error('Firebase save failed: ' + result.error);
+                }
+            } else {
+                // Fallback to localStorage
+                console.log('💾 Firebase not available, using localStorage...');
+                const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+                console.log('📊 Current users in database:', users.length);
+                
+                const existingUser = users.find(u => u.email === userData.email || u.phone === userData.phone);
+                
+                if (existingUser) {
+                    console.log('❌ User already exists!');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    toast.error('Account with this email or phone already exists!');
+                    return;
+                }
+                
+                // Add new user to the array
+                users.push(userData);
+                localStorage.setItem('seelDataUsers', JSON.stringify(users));
+                
+                console.log('✅ User saved to localStorage!');
+                console.log('📊 Total users now:', users.length);
+            }
+            
+            console.log('🌐 Domain:', window.location.hostname);
+            console.log('🔗 Full URL:', window.location.href);
+            
+        } catch (error) {
+            console.error('❌ Signup error:', error);
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
-            toast.error('Account with this email or phone already exists!');
+            toast.error('Failed to create account. Please try again.');
             return;
         }
-        
-        // Add new user to the array
-        users.push(userData);
-        localStorage.setItem('seelDataUsers', JSON.stringify(users));
-        
-        console.log('✅ User saved to localStorage!');
-        console.log('📊 Total users now:', users.length);
-        console.log('🌐 Domain:', window.location.hostname);
-        console.log('🔗 Full URL:', window.location.href);
-        
-        // Verify the save
-        const verifyUsers = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
-        console.log('✔️ Verification - Users in storage:', verifyUsers.length);
-        console.log('✔️ Last user saved:', verifyUsers[verifyUsers.length - 1]);
         
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
