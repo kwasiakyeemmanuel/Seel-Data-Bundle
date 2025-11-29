@@ -2930,7 +2930,7 @@ function generateSignupOTP() {
 async function sendSignupOTP(email, name, otp) {
     const subject = 'Verify Your Email - Seel Data Bundle';
     
-    // Simple text message (more reliable for email delivery)
+    // Simple text message
     const message = `Hi ${name},
 
 Welcome to Seel Data Bundle!
@@ -2956,21 +2956,63 @@ Best regards,
 Seel Data Bundle Team`;
     
     try {
-        const result = await sendEmailNotification(email, subject, message);
+        // Using EmailJS for sending emails to users
+        const result = await sendEmailViaEmailJS(email, name, otp, subject, message);
         
-        // If email sending failed (no API key configured), show demo mode with OTP
         if (!result.success) {
-            console.log('Email sending failed, showing demo OTP:', otp);
-            // Show demo notification with OTP
-            showDemoOTPNotification(email, otp);
+            console.error('Email sending failed:', result.error);
+            toast.error('Failed to send verification code. Please try again.');
+            return false;
         }
         
-        return result.success || true; // Return true even in demo mode
+        return true;
     } catch (error) {
         console.error('Failed to send signup OTP:', error);
-        // Show demo mode on error
-        showDemoOTPNotification(email, otp);
-        return true; // Allow signup to continue in demo mode
+        toast.error('Failed to send verification code. Please try again.');
+        return false;
+    }
+}
+
+// EmailJS Implementation for sending emails to users
+async function sendEmailViaEmailJS(recipientEmail, recipientName, otp, subject, message) {
+    try {
+        // EmailJS configuration
+        const serviceID = 'service_seeldata';
+        const templateID = 'template_otp';
+        const publicKey = 'YOUR_EMAILJS_PUBLIC_KEY'; // Get from https://www.emailjs.com
+        
+        const templateParams = {
+            to_email: recipientEmail,
+            to_name: recipientName,
+            subject: subject,
+            otp_code: otp,
+            message: message
+        };
+        
+        const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                service_id: serviceID,
+                template_id: templateID,
+                user_id: publicKey,
+                template_params: templateParams
+            })
+        });
+        
+        if (response.ok) {
+            console.log('✅ Email sent successfully to:', recipientEmail);
+            return { success: true };
+        } else {
+            const errorText = await response.text();
+            console.error('❌ Email failed:', errorText);
+            return { success: false, error: errorText };
+        }
+    } catch (error) {
+        console.error('EmailJS Error:', error);
+        return { success: false, error: error.message };
     }
 }
 
