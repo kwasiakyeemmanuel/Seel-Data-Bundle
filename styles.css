@@ -1103,7 +1103,27 @@ body {
     }
 
     .auth-buttons {
+        position: absolute;
+        right: 60px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .auth-buttons .btn {
         display: none;
+    }
+
+    .user-menu {
+        display: block !important;
+    }
+
+    .user-menu-btn span {
+        display: none;
+    }
+
+    .user-menu-btn {
+        padding: 8px 12px;
+        min-width: auto;
     }
 
     .help-btn {
