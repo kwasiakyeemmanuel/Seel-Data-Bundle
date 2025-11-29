@@ -194,22 +194,34 @@ function loadOverviewData() {
 function loadUsersData() {
     const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
     
-    console.log('Loading users data. Found:', users.length, 'users');
+    console.log('👥 Loading users data. Found:', users.length, 'users');
+    console.log('🌐 Current domain:', window.location.hostname);
+    console.log('📦 Full localStorage data:', localStorage);
+    
+    // Add domain warning banner
+    const domainWarning = `
+        <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+            <strong>⚠️ Important:</strong> You are viewing admin from <strong>${window.location.hostname}</strong><br>
+            <small style="color: #856404;">Users registered on different domains (localhost vs seeldatabundle.me) will NOT appear here due to browser security.</small><br>
+            <button class="btn btn-primary" onclick="loadUsersData()" style="margin-top: 10px;">
+                <i class="fas fa-sync"></i> Refresh Users
+            </button>
+        </div>
+    `;
     
     if (users.length === 0) {
-        document.getElementById('usersTable').innerHTML = `
+        document.getElementById('usersTable').innerHTML = domainWarning + `
             <div class="empty-state">
                 <i class="fas fa-users"></i>
-                <p>No users registered yet</p>
+                <p>No users registered yet on <strong>${window.location.hostname}</strong></p>
                 <small style="color: #999; margin-top: 10px; display: block;">
-                    If users have registered but don't appear here, ensure you're accessing the admin panel 
-                    from the same domain where users created their accounts (seeldatabundle.me).
+                    Users must sign up on <strong>${window.location.hostname}</strong> to appear here.
                 </small>
             </div>`;
         return;
     }
     
-    const tableHTML = `
+    const tableHTML = domainWarning + `
         <div class="data-table">
             <table>
                 <thead>
@@ -410,6 +422,19 @@ function loadTicketsData() {
 
 // Load database data
 function loadDatabaseData() {
+    console.log('💾 Loading database data...');
+    console.log('🌐 Domain:', window.location.hostname);
+    console.log('📦 Total localStorage keys:', localStorage.length);
+    
+    // Check specifically for users
+    const usersData = localStorage.getItem('seelDataUsers');
+    console.log('👥 seelDataUsers exists:', !!usersData);
+    if (usersData) {
+        const users = JSON.parse(usersData);
+        console.log('👥 Number of users:', users.length);
+        console.log('👥 Users:', users);
+    }
+    
     const databaseHTML = [];
     
     for (let i = 0; i < localStorage.length; i++) {
