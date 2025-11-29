@@ -836,10 +836,10 @@ function handleSignup(event) {
     
     const submitBtn = event.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
     submitBtn.disabled = true;
     
-    // Check if email or phone already exists BEFORE sending OTP
+    // Create account directly without email verification
     setTimeout(() => {
         const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
         const existingUser = users.find(u => u.email === userData.email || u.phone === userData.phone);
@@ -851,31 +851,39 @@ function handleSignup(event) {
             return;
         }
         
-        // Store user data temporarily (not in seelDataUsers yet)
-        const pendingSignup = {
-            userData: userData,
-            otp: generateSignupOTP(),
-            timestamp: Date.now(),
-            expiresIn: 5 * 60 * 1000 // 5 minutes
-        };
-        localStorage.setItem(`pendingSignup_${userData.email}`, JSON.stringify(pendingSignup));
+        // Add new user to the array
+        users.push(userData);
+        localStorage.setItem('seelDataUsers', JSON.stringify(users));
         
-        // Send OTP via email
-        sendSignupOTP(userData.email, userData.name, pendingSignup.otp).then(success => {
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            
-            if (success) {
-                // Close signup modal and show OTP verification modal
-                closeSignupModal();
-                showOTPVerificationModal(userData.email, userData.name);
-            } else {
-                toast.error('Failed to send verification code. Please try again.');
-                // Clean up pending signup
-                localStorage.removeItem(`pendingSignup_${userData.email}`);
-            }
-        });
-    }, 500);
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        
+        // Close signup modal
+        closeSignupModal();
+        
+        // Show success message
+        const successModal = document.createElement('div');
+        successModal.className = 'modal';
+        successModal.id = 'signupSuccessModal';
+        successModal.innerHTML = `
+            <div class="modal-content success-modal">
+                <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h2>Account Created Successfully!</h2>
+                <p>Welcome to Seel Data, ${userData.name}! 🎉</p>
+                <p style="color: #666; font-size: 14px; margin-top: 10px;">Please login to access our services.</p>
+                <button class="btn btn-primary btn-block" onclick="closeSignupSuccessModal(); showLoginModal();">
+                    Login Now
+                </button>
+            </div>
+        `;
+        document.body.appendChild(successModal);
+        successModal.style.display = 'flex';
+        
+        toast.success('Account created successfully! 🎉');
+    }, 800);
 }
 
 // Close signup success modal
