@@ -2978,11 +2978,63 @@ async function sendSignupOTP(email, name, otp) {
     
     try {
         const result = await sendEmailNotification(email, subject, htmlContent);
-        return result.success;
+        
+        // If email sending failed (no API key configured), show demo mode with OTP
+        if (!result.success) {
+            console.log('Email sending failed, showing demo OTP:', otp);
+            // Show demo notification with OTP
+            showDemoOTPNotification(email, otp);
+        }
+        
+        return result.success || true; // Return true even in demo mode
     } catch (error) {
         console.error('Failed to send signup OTP:', error);
-        return false;
+        // Show demo mode on error
+        showDemoOTPNotification(email, otp);
+        return true; // Allow signup to continue in demo mode
     }
+}
+
+function showDemoOTPNotification(email, otp) {
+    // Show a toast notification with the OTP for demo/testing
+    const demoToast = document.createElement('div');
+    demoToast.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px 25px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        z-index: 10001;
+        max-width: 350px;
+        animation: slideInRight 0.3s ease-out;
+    `;
+    demoToast.innerHTML = `
+        <div style="display: flex; align-items: start; gap: 15px;">
+            <i class="fas fa-info-circle" style="font-size: 24px; margin-top: 2px;"></i>
+            <div>
+                <div style="font-weight: 700; font-size: 16px; margin-bottom: 8px;">📧 Demo Mode - OTP Code</div>
+                <div style="font-size: 13px; margin-bottom: 10px; opacity: 0.9;">
+                    Email service not configured. Use this code to verify:
+                </div>
+                <div style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 10px;">
+                    <div style="font-size: 32px; font-weight: 700; letter-spacing: 8px;">${otp}</div>
+                </div>
+                <div style="font-size: 11px; opacity: 0.8;">
+                    Configure Web3Forms API key in script.js for real emails
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(demoToast);
+    
+    // Auto remove after 30 seconds
+    setTimeout(() => {
+        demoToast.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => demoToast.remove(), 300);
+    }, 30000);
 }
 
 function showOTPVerificationModal(email, name) {
