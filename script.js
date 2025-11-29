@@ -1686,6 +1686,7 @@ function handlePurchase(event) {
             paymentSimModal.id = 'paymentSimModal';
             paymentSimModal.innerHTML = `
                 <div class="modal-content success-modal">
+                    <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
                     <div class="success-icon" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);">
                         <i class="fas fa-info-circle"></i>
                     </div>
@@ -1725,6 +1726,7 @@ function verifyPayment(reference, orderData) {
     verifyingModal.id = 'verifyingModal';
     verifyingModal.innerHTML = `
         <div class="modal-content success-modal">
+            <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
             <div class="success-icon">
                 <i class="fas fa-spinner fa-spin"></i>
             </div>
