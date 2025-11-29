@@ -2928,56 +2928,35 @@ function generateSignupOTP() {
 }
 
 async function sendSignupOTP(email, name, otp) {
-    const subject = '🔐 Verify Your Email - Seel Data Bundle';
-    const htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f8f9fa;">
-            <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #667eea; margin: 0;">🎉 Welcome to Seel Data Bundle!</h1>
-                </div>
-                
-                <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Hi ${name},</p>
-                
-                <p style="font-size: 16px; color: #333; margin-bottom: 30px;">
-                    Thank you for signing up! To complete your registration, please verify your email address using the verification code below:
-                </p>
-                
-                <div style="background: #f0f4ff; padding: 30px; border-radius: 8px; text-align: center; margin: 30px 0;">
-                    <p style="font-size: 14px; color: #666; margin-bottom: 10px; font-weight: 600;">Your Verification Code:</p>
-                    <div style="font-size: 48px; font-weight: 700; color: #667eea; letter-spacing: 12px; margin: 20px 0;">
-                        ${otp}
-                    </div>
-                    <p style="font-size: 13px; color: #999; margin-top: 15px;">⏱️ Code expires in 5 minutes</p>
-                </div>
-                
-                <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8; margin: 20px 0;">
-                    <p style="margin: 0; color: #0c5460; font-size: 14px;">
-                        <strong>ℹ️ Note:</strong> Enter this code on the signup page to complete your account creation.
-                    </p>
-                </div>
-                
-                <p style="font-size: 14px; color: #666; margin-top: 20px;">
-                    If you didn't sign up for Seel Data Bundle, please ignore this email.
-                </p>
-                
-                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
-                    <p style="font-size: 14px; color: #333; margin-bottom: 10px;">
-                        Once verified, you'll have access to:
-                    </p>
-                    <div style="text-align: left; display: inline-block;">
-                        <p style="font-size: 13px; color: #666; margin: 5px 0;">✅ Instant data bundle purchases</p>
-                        <p style="font-size: 13px; color: #666; margin: 5px 0;">✅ Exclusive deals and discounts</p>
-                        <p style="font-size: 13px; color: #666; margin: 5px 0;">✅ Quick recharge history</p>
-                        <p style="font-size: 13px; color: #666; margin: 5px 0;">✅ 24/7 customer support</p>
-                    </div>
-                    <p style="font-size: 12px; color: #999; margin-top: 20px;">Need help? Contact us on WhatsApp: +233 53 792 2905</p>
-                </div>
-            </div>
-        </div>
-    `;
+    const subject = 'Verify Your Email - Seel Data Bundle';
+    
+    // Simple text message (more reliable for email delivery)
+    const message = `Hi ${name},
+
+Welcome to Seel Data Bundle!
+
+Your verification code is: ${otp}
+
+Please enter this code on the signup page to complete your registration.
+
+⏱️ This code will expire in 5 minutes.
+
+If you didn't sign up for Seel Data Bundle, please ignore this email.
+
+---
+Once verified, you'll have access to:
+✅ Instant data bundle purchases
+✅ Exclusive deals and discounts  
+✅ Quick recharge history
+✅ 24/7 customer support
+
+Need help? Contact us on WhatsApp: +233 53 792 2905
+
+Best regards,
+Seel Data Bundle Team`;
     
     try {
-        const result = await sendEmailNotification(email, subject, htmlContent);
+        const result = await sendEmailNotification(email, subject, message);
         
         // If email sending failed (no API key configured), show demo mode with OTP
         if (!result.success) {
@@ -3196,28 +3175,38 @@ function cancelOTPVerification(email) {
 // Email Notification System
 async function sendEmailNotification(recipientEmail, subject, htmlContent) {
     // Using Web3Forms - Free email service (no backend needed)
-    const WEB3FORMS_KEY = 'bca72c74-a0ae-49a6-b8f6-0f8632c2f7a5'; // Get free key from https://web3forms.com
+    const WEB3FORMS_KEY = 'bca72c74-a0ae-49a6-b8f6-0f8632c2f7a5';
     
     try {
+        const formData = {
+            access_key: WEB3FORMS_KEY,
+            subject: subject,
+            from_name: 'Seel Data Bundle',
+            email: recipientEmail,
+            message: htmlContent
+        };
+        
+        console.log('Sending email to:', recipientEmail);
+        
         const response = await fetch('https://api.web3forms.com/submit', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                access_key: WEB3FORMS_KEY,
-                subject: subject,
-                from_name: 'Seel Data Bundle',
-                email: recipientEmail,
-                message: htmlContent,
-                replyto: 'noreply@seeldatabundle.me'
-            })
+            body: JSON.stringify(formData)
         });
         
         const result = await response.json();
         console.log('Email API Response:', result);
-        return { success: result.success, data: result };
+        
+        if (result.success) {
+            console.log('✅ Email sent successfully to:', recipientEmail);
+            return { success: true, data: result };
+        } else {
+            console.error('❌ Email failed:', result.message);
+            return { success: false, error: result.message };
+        }
     } catch (error) {
         console.error('Email Error:', error);
         return { success: false, error: error.message };
