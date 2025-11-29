@@ -7,14 +7,15 @@
 // 5. Enable Firestore Database in Firebase Console
 // 6. Set Firestore rules to allow authenticated access
 
-// REPLACE THESE VALUES WITH YOUR FIREBASE PROJECT CREDENTIALS
+// Firebase configuration values
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyCaFzPhm5DRaa7bhig0-GT69QD_s5zh6aM",
+    authDomain: "seel-data-bundle.firebaseapp.com",
+    projectId: "seel-data-bundle",
+    storageBucket: "seel-data-bundle.firebasestorage.app",
+    messagingSenderId: "48922889152",
+    appId: "1:48922889152:web:f41c8b7016c69a1726d625",
+    measurementId: "G-JE324SLNP4"
 };
 
 // Initialize Firebase
