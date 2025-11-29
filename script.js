@@ -305,6 +305,7 @@ function handleContactForm(event) {
             successModal.id = 'contactSuccessModal';
             successModal.innerHTML = `
                 <div class="modal-content success-modal">
+                    <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
                     <div class="success-icon">
                         <i class="fas fa-check-circle"></i>
                     </div>
@@ -651,6 +652,7 @@ function handleLogin(event) {
             successModal.id = 'loginSuccessModal';
             successModal.innerHTML = `
                 <div class="modal-content success-modal">
+                    <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
                     <div class="success-icon">
                         <i class="fas fa-check-circle"></i>
                     </div>
@@ -871,6 +873,7 @@ function handleSignup(event) {
         successModal.id = 'signupSuccessModal';
         successModal.innerHTML = `
             <div class="modal-content success-modal">
+                <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
                 <div class="success-icon">
                     <i class="fas fa-check-circle"></i>
                 </div>
@@ -1007,6 +1010,7 @@ function showPasswordResetLinkModal(email, token) {
     const resetLink = window.location.origin + window.location.pathname + '?reset=' + token;
     modal.innerHTML = `
         <div class="modal-content success-modal">
+            <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
             <div class="success-icon">
                 <i class="fas fa-check-circle"></i>
             </div>
@@ -1078,6 +1082,9 @@ function showNewPasswordModal(email, token) {
             <div class="modal-header">
                 <i class="fas fa-lock"></i>
                 <h2>Create New Password</h2>
+                <button class="close-btn" onclick="window.location.href='index.html'">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <div class="modal-body">
                 <p style="color: var(--dark-light); margin-bottom: 20px; text-align: center;">
@@ -1239,6 +1246,7 @@ function showAuthRequiredModal() {
     modal.id = 'authRequiredModal';
     modal.innerHTML = `
         <div class="modal-content success-modal">
+            <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
             <div class="success-icon" style="background: linear-gradient(135deg, #FF7675 0%, #E74C3C 100%);">
                 <i class="fas fa-lock"></i>
             </div>
@@ -1661,6 +1669,7 @@ function showSuccessModal(data, paymentRef) {
     modal.id = 'successModal';
     modal.innerHTML = `
         <div class="modal-content success-modal">
+            <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
             <div class="success-icon">
                 <i class="fas fa-check-circle"></i>
             </div>
