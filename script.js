@@ -507,14 +507,6 @@ function updateHeaderForLoggedInUser(user) {
             </div>
         `;
     }
-    
-    // Update mobile user name
-    const mobileUserSection = document.getElementById('mobileUserSection');
-    const mobileUserName = document.getElementById('mobileUserName');
-    if (mobileUserSection && mobileUserName) {
-        mobileUserName.textContent = user.name;
-        mobileUserSection.style.display = 'flex';
-    }
 }
 
 // Toggle user dropdown menu

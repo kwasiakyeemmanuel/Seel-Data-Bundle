@@ -1022,23 +1022,6 @@ body {
     transform: translateY(-50%);
 }
 
-.mobile-user-section {
-    display: none;
-    align-items: center;
-    gap: 10px;
-    position: absolute;
-    right: 60px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.mobile-user-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-color);
-    white-space: nowrap;
-}
-
 @media (max-width: 768px) {
     .modal-content {
         width: 95%;
@@ -1076,15 +1059,6 @@ body {
         right: 0;
         top: 50%;
         transform: translateY(-50%);
-    }
-
-    .mobile-user-section {
-        display: flex !important;
-    }
-    
-    /* Hide desktop user menu on mobile */
-    .user-menu {
-        display: none !important;
     }
 
     .logo {
