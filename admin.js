@@ -44,6 +44,13 @@ function handleAdminLogin(event) {
 function showAdminDashboard() {
     document.getElementById('adminLoginModal').style.display = 'none';
     document.getElementById('adminDashboard').style.display = 'block';
+    
+    // Show current domain
+    const domainSpan = document.getElementById('currentDomain');
+    if (domainSpan) {
+        domainSpan.textContent = window.location.hostname;
+    }
+    
     loadDashboardData();
 }
 
@@ -94,6 +101,13 @@ function showAdminSection(section) {
 
 // Load dashboard data
 function loadDashboardData() {
+    // Debug: Log localStorage contents
+    console.log('=== ADMIN DASHBOARD DEBUG ===');
+    console.log('Total localStorage items:', localStorage.length);
+    console.log('Users data:', localStorage.getItem('seelDataUsers'));
+    console.log('Current domain:', window.location.hostname);
+    console.log('===========================');
+    
     loadOverviewData();
 }
 
@@ -167,8 +181,18 @@ function loadOverviewData() {
 function loadUsersData() {
     const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
     
+    console.log('Loading users data. Found:', users.length, 'users');
+    
     if (users.length === 0) {
-        document.getElementById('usersTable').innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>No users registered yet</p></div>';
+        document.getElementById('usersTable').innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-users"></i>
+                <p>No users registered yet</p>
+                <small style="color: #999; margin-top: 10px; display: block;">
+                    If users have registered but don't appear here, ensure you're accessing the admin panel 
+                    from the same domain where users created their accounts (seeldatabundle.me).
+                </small>
+            </div>`;
         return;
     }
     
