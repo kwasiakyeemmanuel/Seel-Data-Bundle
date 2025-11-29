@@ -14,6 +14,25 @@ document.addEventListener('DOMContentLoaded', function() {
     checkWelcomeBack();
 });
 
+// Helper function to get current user with decryption support
+function getCurrentUser() {
+    try {
+        const data = localStorage.getItem('currentUser');
+        if (!data) return null;
+        
+        // Try to decrypt if Security module available
+        const decryptedData = window.Security ? window.Security.decryptData(data) : data;
+        return JSON.parse(decryptedData);
+    } catch (error) {
+        // Fallback to plain JSON if decryption fails (backwards compatibility)
+        try {
+            return JSON.parse(localStorage.getItem('currentUser') || 'null');
+        } catch (e) {
+            return null;
+        }
+    }
+}
+
 // Check if user is returning after 3+ minutes
 function checkWelcomeBack() {
     const lastVisit = localStorage.getItem('lastVisitTime');
@@ -25,7 +44,7 @@ function checkWelcomeBack() {
         
         if (timeDifference > threeMinutes) {
             // User has been away for more than 3 minutes
-            const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            const currentUser = getCurrentUser();
             
             setTimeout(() => {
                 if (currentUser) {
@@ -623,6 +642,12 @@ function handleLogin(event) {
     const email = formData.get('email');
     const password = formData.get('password');
     
+    // Apply rate limiting if available
+    if (window.Security && !window.Security.rateLimiter('login', email)) {
+        toast.error('Too many login attempts. Please try again in 5 minutes.');
+        return;
+    }
+    
     const submitBtn = event.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
@@ -658,8 +683,10 @@ function handleLogin(event) {
                 const userWithoutPassword = {...user};
                 delete userWithoutPassword.password;
                 
-                // Save user to localStorage for session
-                localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+                // Save user to localStorage for session with encryption
+                const userData = JSON.stringify(userWithoutPassword);
+                const encryptedData = window.Security ? window.Security.encryptData(userData) : userData;
+                localStorage.setItem('currentUser', encryptedData);
                 
                 // Check if this is a new user or returning user
                 const isNewUser = sessionStorage.getItem('isNewUser') === 'true';
@@ -848,6 +875,23 @@ function handleSignup(event) {
     const password = formData.get('password');
     const confirmPassword = formData.get('confirmPassword');
     
+    // Get and sanitize inputs
+    const name = window.Security ? window.Security.sanitizeInput(formData.get('name')) : formData.get('name');
+    const email = window.Security ? window.Security.sanitizeInput(formData.get('email')) : formData.get('email');
+    const phone = window.Security ? window.Security.sanitizeInput(formData.get('phone')) : formData.get('phone');
+    
+    // Validate email and phone with security module
+    if (window.Security) {
+        if (!window.Security.isValidEmail(email)) {
+            toast.error('Please enter a valid email address');
+            return;
+        }
+        if (!window.Security.isValidPhone(phone)) {
+            toast.error('Please enter a valid phone number (10 digits)');
+            return;
+        }
+    }
+    
     // Validate password strength
     const strength = checkPasswordStrength(password);
     if (strength.level < 3) {
@@ -861,9 +905,9 @@ function handleSignup(event) {
     }
     
     const userData = {
-        name: formData.get('name'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
+        name: name,
+        email: email,
+        phone: phone,
         password: password,
         createdAt: new Date().toISOString()
     };
@@ -1714,10 +1758,9 @@ function handlePurchase(event) {
     submitBtn.disabled = true;
     
     // Check if user has a valid Paystack key
-    // IMPORTANT: Replace the key below with your actual Paystack public key
-    // Get it from: https://dashboard.paystack.com/#/settings/developers
-    // Use pk_test_xxx for testing, pk_live_xxx for production
-    const PAYSTACK_PUBLIC_KEY = 'pk_live_c5bf872b86583d795bd34b259392f6a2c078deb1'; // Your Paystack LIVE key
+    // IMPORTANT: Using obfuscated Paystack key from Security module
+    // The actual key is: pk_live_c5bf872b86583d795bd34b259392f6a2c078deb1
+    const PAYSTACK_PUBLIC_KEY = window.Security ? window.Security.getPaystackKey() : 'pk_live_c5bf872b86583d795bd34b259392f6a2c078deb1';
     const hasValidKey = PAYSTACK_PUBLIC_KEY && !PAYSTACK_PUBLIC_KEY.includes('xxxxxxxxxx');
     
     if (hasValidKey && typeof PaystackPop !== 'undefined') {
