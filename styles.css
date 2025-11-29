@@ -1081,6 +1081,11 @@ body {
     .mobile-user-section {
         display: flex !important;
     }
+    
+    /* Hide desktop user menu on mobile */
+    .user-menu {
+        display: none !important;
+    }
 
     .logo {
         font-size: 20px;
