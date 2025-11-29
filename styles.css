@@ -2022,15 +2022,6 @@ body {
     margin-bottom: 10px;
 }
 
-/* Bundle Search */
-.bundle-search-wrapper {
-    position: relative;
-}
-
-.bundle-search-wrapper i {
-    pointer-events: none;
-}
-
 /* Responsive Dashboard */
 @media (max-width: 768px) {
     .dashboard-stats {

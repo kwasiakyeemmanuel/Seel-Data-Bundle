@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeWhatsAppSupport();
     initializeMobileMenu();
     checkWelcomeBack();
-    initializeBundleSearch();
 });
 
 // Check if user is returning after 3+ minutes
@@ -2179,46 +2178,6 @@ function validatePhoneNumber(phone, network) {
 
 // ========== BUNDLE SEARCH & FILTERS ==========
 
-function initializeBundleSearch() {
-    const servicesSection = document.querySelector('.services');
-    if (!servicesSection) return;
-    
-    // Add search bar before filters
-    const filtersDiv = document.querySelector('.filters');
-    if (filtersDiv) {
-        const searchHTML = `
-            <div class="bundle-search-wrapper" style="margin-bottom: 20px;">
-                <input 
-                    type="text" 
-                    id="bundleSearchInput" 
-                    placeholder="Search bundles by size, price, or validity..." 
-                    style="width: 100%; padding: 15px 45px 15px 20px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px;"
-                >
-                <i class="fas fa-search" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: #999;"></i>
-            </div>
-        `;
-        filtersDiv.insertAdjacentHTML('beforebegin', searchHTML);
-        
-        document.getElementById('bundleSearchInput').addEventListener('input', function(e) {
-            filterBundles(e.target.value);
-        });
-    }
-}
-
-function filterBundles(query) {
-    const cards = document.querySelectorAll('.service-card');
-    query = query.toLowerCase();
-    
-    cards.forEach(card => {
-        const text = card.textContent.toLowerCase();
-        if (text.includes(query)) {
-            card.style.display = 'block';
-        } else {
-            card.style.display = 'none';
-        }
-    });
-}
-
 // ========== TESTIMONIALS / REVIEWS ==========
 
 function showTestimonials() {
@@ -3072,9 +3031,3 @@ window.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Initialize new features on load
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(() => {
-        initializeBundleSearch();
-    }, 500);
-});
