@@ -837,11 +837,55 @@ body {
     gap: 20px;
 }
 
+@media (max-width: 768px) {
+    .contact-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+}
+
 .contact-card {
     background: var(--light-bg);
     padding: 24px;
     border-radius: 16px;
     transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .contact-card {
+        padding: 16px 12px;
+    }
+    
+    .contact-card h3 {
+        font-size: 15px;
+        margin-bottom: 8px;
+    }
+    
+    .contact-card p {
+        font-size: 12px;
+        margin: 3px 0;
+    }
+    
+    .contact-card small {
+        font-size: 10px;
+        margin-top: 5px;
+    }
+    
+    .contact-icon {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 10px;
+    }
+    
+    .contact-icon i {
+        font-size: 18px;
+    }
+    
+    .contact-card .btn {
+        padding: 8px 12px;
+        font-size: 11px;
+        margin-top: 8px;
+    }
 }
 
 .contact-card:hover {
@@ -1318,11 +1362,6 @@ body {
 
     .contact {
         padding: 50px 0;
-    }
-
-    .contact-row {
-        grid-template-columns: 1fr;
-        gap: 15px;
     }
 
     .contact-content {
