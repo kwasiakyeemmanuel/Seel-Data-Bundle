@@ -831,6 +831,12 @@ body {
     gap: 20px;
 }
 
+.contact-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
 .contact-card {
     background: var(--light-bg);
     padding: 24px;
@@ -1312,6 +1318,11 @@ body {
 
     .contact {
         padding: 50px 0;
+    }
+
+    .contact-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
     }
 
     .contact-content {
