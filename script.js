@@ -1883,7 +1883,7 @@ function verifyPayment(reference, orderData) {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     
     // Simulate payment verification
-    setTimeout(() => {
+    setTimeout(async () => {
         verifyingModal.remove();
         
         // Save order to localStorage
@@ -1906,7 +1906,28 @@ function verifyPayment(reference, orderData) {
         orders.push(order);
         localStorage.setItem(orderKey, JSON.stringify(orders));
         
-        // Send purchase confirmation email
+        // Send admin notifications (Email + WhatsApp)
+        if (window.NotificationService) {
+            try {
+                const notificationData = {
+                    customerName: currentUser.name || 'N/A',
+                    customerEmail: orderData.email || currentUser.email,
+                    customerPhone: orderData.phoneNumber,
+                    service: orderData.service,
+                    bundleSize: orderData.bundleSize,
+                    amount: orderData.amount,
+                    reference: reference,
+                    timestamp: Date.now()
+                };
+                
+                console.log('📧 Sending admin notifications...');
+                await window.NotificationService.sendOrderNotification(notificationData);
+            } catch (error) {
+                console.error('❌ Notification error:', error);
+            }
+        }
+        
+        // Send purchase confirmation email to customer
         setTimeout(() => {
             sendPurchaseConfirmationEmail(order);
         }, 500);
