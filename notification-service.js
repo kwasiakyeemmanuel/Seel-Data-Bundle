@@ -11,16 +11,6 @@ class NotificationService {
             publicKey: 'vdOv7Yne2fRFjCRQ_'    // Your EmailJS Public Key
         };
         
-        // WhatsApp Configuration
-        // Option 1: WhatsApp Business API (requires approval)
-        // Option 2: Use Twilio WhatsApp (easier to set up)
-        // Option 3: Use Africa's Talking WhatsApp API
-        this.whatsappConfig = {
-            apiUrl: 'YOUR_WHATSAPP_API_URL',        // Your WhatsApp API endpoint
-            apiKey: 'YOUR_WHATSAPP_API_KEY',        // Your API key
-            adminNumber: '233537922905'              // Your WhatsApp number (international format)
-        };
-        
         // Admin contact details
         this.adminEmail = 'seeldatabundle@gmail.com';
         this.adminPhone = '0537922905';
@@ -60,28 +50,16 @@ class NotificationService {
             timestamp
         } = orderData;
         
-        console.log('📧 Sending order notifications...');
+        console.log('📧 Sending email notification...');
         
-        const results = {
-            email: false,
-            whatsapp: false
-        };
-        
-        // Send Email Notification
+        // Send Email Notification only
         try {
-            results.email = await this.sendEmailNotification(orderData);
+            const result = await this.sendEmailNotification(orderData);
+            return { email: result };
         } catch (error) {
             console.error('❌ Email notification failed:', error);
+            return { email: false };
         }
-        
-        // Send WhatsApp Notification
-        try {
-            results.whatsapp = await this.sendWhatsAppNotification(orderData);
-        } catch (error) {
-            console.error('❌ WhatsApp notification failed:', error);
-        }
-        
-        return results;
     }
     
     /**
@@ -129,66 +107,6 @@ class NotificationService {
     }
     
     /**
-     * Send WhatsApp notification
-     */
-    async sendWhatsAppNotification(orderData) {
-        // Check if WhatsApp API is configured
-        if (this.whatsappConfig.apiUrl === 'YOUR_WHATSAPP_API_URL') {
-            console.log('⚠️ WhatsApp API not configured. Skipping WhatsApp notification.');
-            return false;
-        }
-        
-        const message = this.formatWhatsAppMessage(orderData);
-        
-        try {
-            const response = await fetch(this.whatsappConfig.apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.whatsappConfig.apiKey}`
-                },
-                body: JSON.stringify({
-                    to: this.whatsappConfig.adminNumber,
-                    message: message,
-                    type: 'text'
-                })
-            });
-            
-            if (response.ok) {
-                console.log('✅ WhatsApp notification sent');
-                return true;
-            } else {
-                console.error('❌ WhatsApp send failed:', await response.text());
-                return false;
-            }
-        } catch (error) {
-            console.error('❌ WhatsApp API error:', error);
-            return false;
-        }
-    }
-    
-    /**
-     * Format WhatsApp message
-     */
-    formatWhatsAppMessage(orderData) {
-        return `🔔 *NEW DATA BUNDLE ORDER*
-
-📱 *Service:* ${orderData.service}
-📦 *Bundle:* ${orderData.bundleSize}
-💰 *Amount:* GH₵${orderData.amount}
-
-👤 *Customer Details:*
-📞 Phone: ${orderData.customerPhone}
-📧 Email: ${orderData.customerEmail}
-👤 Name: ${orderData.customerName || 'N/A'}
-
-🔖 *Reference:* ${orderData.reference}
-⏰ *Time:* ${new Date(orderData.timestamp).toLocaleString()}
-
-✅ Please process this order immediately.`;
-    }
-    
-    /**
      * Send test notification
      */
     async sendTestNotification() {
@@ -203,11 +121,16 @@ class NotificationService {
             timestamp: Date.now()
         };
         
-        console.log('🧪 Sending test notifications...');
-        const results = await this.sendOrderNotification(testData);
+        console.log('🧪 Sending test email notification...');
+        const result = await this.sendOrderNotification(testData);
         
-        console.log('Test Results:', results);
-        return results;
+        console.log('Test Result:', result);
+        if (result.email) {
+            console.log('✅ SUCCESS! Check your email: seeldatabundle@gmail.com');
+        } else {
+            console.log('❌ Failed. Check console for errors.');
+        }
+        return result;
     }
 }
 
