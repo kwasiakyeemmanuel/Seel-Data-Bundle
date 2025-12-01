@@ -6,9 +6,9 @@ class NotificationService {
         // EmailJS Configuration (Free email service)
         // Sign up at: https://www.emailjs.com/
         this.emailConfig = {
-            serviceId: 'YOUR_EMAILJS_SERVICE_ID',  // Replace with your EmailJS Service ID
-            templateId: 'YOUR_EMAILJS_TEMPLATE_ID', // Replace with your EmailJS Template ID
-            publicKey: 'YOUR_EMAILJS_PUBLIC_KEY'    // Replace with your EmailJS Public Key
+            serviceId: 'service_od9842j',  // Your EmailJS Service ID
+            templateId: 'template_4fzd45c', // Your EmailJS Template ID
+            publicKey: 'vdOv7Yne2fRFjCRQ_'    // Your EmailJS Public Key
         };
         
         // WhatsApp Configuration
