@@ -7,7 +7,7 @@ class NotificationService {
         // Sign up at: https://www.emailjs.com/
         this.emailConfig = {
             serviceId: 'service_od9842j',  // Your EmailJS Service ID
-            templateId: 'template_4fzd45c', // Your EmailJS Template ID
+            templateId: 'template_m6xwo5g', // Your EmailJS Template ID
             publicKey: 'vdOv7Yne2fRFjCRQ_'    // Your EmailJS Public Key
         };
         
