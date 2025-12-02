@@ -735,12 +735,41 @@ function handleLogin(event) {
             console.log('📊 Found', users.length, 'users in localStorage');
             console.log('👥 User emails:', users.map(u => u.email));
             
-            user = users.find(u => 
-                (u.email === email || u.phone === email) && u.password === password
-            );
+            // Find user by email/phone
+            const foundUser = users.find(u => u.email === email || u.phone === email);
+            
+            if (!foundUser) {
+                console.log('❌ Email/phone not found');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                toast.error('Invalid email or password');
+                return;
+            }
+            
+            // Verify password (supports both hashed and plain for backwards compatibility)
+            console.log('🔐 Verifying password...');
+            let passwordMatch = false;
+            
+            if (window.PasswordUtils) {
+                passwordMatch = await window.PasswordUtils.verifyPassword(password, foundUser.password);
+            } else {
+                // Fallback to plain comparison if bcrypt not loaded
+                passwordMatch = password === foundUser.password;
+            }
+            
+            if (passwordMatch) {
+                console.log('✅ Password verified successfully!');
+                user = foundUser;
+            } else {
+                console.log('❌ Password verification failed');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                toast.error('Invalid email or password');
+                return;
+            }
             
             if (user) {
-                console.log('✅ User found and authenticated!');
+                console.log('✅ User authenticated!');
             } else {
                 console.log('❌ No matching user found');
                 console.log('🔍 Checking credentials:');
@@ -1006,6 +1035,15 @@ function handleSignup(event) {
         try {
             console.log('💾 Using localStorage for signup...');
             
+            // Hash password before storing
+            console.log('🔒 Hashing password...');
+            if (window.PasswordUtils) {
+                userData.password = await window.PasswordUtils.hashPassword(password);
+                console.log('✅ Password hashed successfully');
+            } else {
+                console.warn('⚠️ Password hashing not available - storing plain password (NOT RECOMMENDED)');
+            }
+            
             const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
             console.log('📊 Current users in database:', users.length);
             
@@ -1023,7 +1061,7 @@ function handleSignup(event) {
             users.push(userData);
             localStorage.setItem('seelDataUsers', JSON.stringify(users));
             
-            console.log('✅ User saved to localStorage!');
+            console.log('✅ User saved to localStorage with hashed password!');
             console.log('📊 Total users now:', users.length);
         } catch (error) {
             console.error('❌ LocalStorage error:', error);
