@@ -927,28 +927,40 @@ function handleSignup(event) {
         try {
             // Try Firebase first if available
             if (window.firebaseDB && window.FirebaseDB) {
-                console.log('🔥 Using Firebase for signup...');
+                console.log('🔥 Attempting Firebase signup...');
                 
-                // Check if user exists in Firebase
-                const existingUserResult = await window.FirebaseDB.getUser(userData.email);
-                if (existingUserResult.success && existingUserResult.user) {
-                    console.log('❌ User already exists in Firebase!');
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                    toast.error('Account with this email already exists!');
-                    return;
-                }
-                
-                // Create user in Firebase
-                const result = await window.FirebaseDB.createUser(userData);
-                if (result.success) {
-                    console.log('✅ User saved to Firebase!');
-                } else {
-                    throw new Error('Firebase save failed: ' + result.error);
+                try {
+                    // Check if user exists in Firebase
+                    const existingUserResult = await window.FirebaseDB.getUser(userData.email);
+                    if (existingUserResult.success && existingUserResult.user) {
+                        console.log('❌ User already exists in Firebase!');
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                        toast.error('Account with this email already exists!');
+                        return;
+                    }
+                    
+                    // Create user in Firebase
+                    const result = await window.FirebaseDB.createUser(userData);
+                    if (result.success) {
+                        console.log('✅ User saved to Firebase!');
+                    } else {
+                        console.warn('⚠️ Firebase save failed, using localStorage fallback');
+                        throw new Error('Firebase unavailable');
+                    }
+                } catch (firebaseError) {
+                    console.warn('⚠️ Firebase error, falling back to localStorage:', firebaseError.message);
+                    // Fall through to localStorage
+                    throw firebaseError;
                 }
             } else {
-                // Fallback to localStorage
-                console.log('💾 Firebase not available, using localStorage...');
+                throw new Error('Firebase not initialized');
+            }
+        } catch (error) {
+            // Fallback to localStorage
+            console.log('💾 Using localStorage for signup...');
+            
+            try {
                 const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
                 console.log('📊 Current users in database:', users.length);
                 
@@ -968,18 +980,17 @@ function handleSignup(event) {
                 
                 console.log('✅ User saved to localStorage!');
                 console.log('📊 Total users now:', users.length);
+            } catch (localStorageError) {
+                console.error('❌ LocalStorage error:', localStorageError);
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                toast.error('Failed to create account. Please try again.');
+                return;
             }
-            
-            console.log('🌐 Domain:', window.location.hostname);
-            console.log('🔗 Full URL:', window.location.href);
-            
-        } catch (error) {
-            console.error('❌ Signup error:', error);
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            toast.error('Failed to create account. Please try again.');
-            return;
         }
+        
+        console.log('🌐 Domain:', window.location.hostname);
+        console.log('🔗 Full URL:', window.location.href);
         
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
