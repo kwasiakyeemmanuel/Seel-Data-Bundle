@@ -109,35 +109,52 @@ export default async function handler(req, res) {
                 });
             }
 
-            // Get user
-            const user = await getUserByEmail(email);
-            if (!user) {
-                return res.status(401).json({ 
-                    success: false, 
-                    error: 'Invalid credentials' 
-                });
-            }
-
-            // Verify password
-            const passwordMatch = await bcrypt.compare(password, user.password_hash);
-            if (!passwordMatch) {
-                return res.status(401).json({ 
-                    success: false, 
-                    error: 'Invalid credentials' 
-                });
-            }
-
-            // Return user without password hash
-            return res.status(200).json({
-                success: true,
-                user: {
-                    id: user.id,
-                    email: user.email,
-                    fullName: user.full_name,
-                    phone: user.phone,
-                    createdAt: user.created_at
+            try {
+                // Get user
+                console.log('LOGIN: Fetching user for email:', email);
+                const user = await getUserByEmail(email);
+                
+                if (!user) {
+                    console.log('LOGIN: User not found');
+                    return res.status(401).json({ 
+                        success: false, 
+                        error: 'Invalid credentials' 
+                    });
                 }
-            });
+
+                console.log('LOGIN: User found, verifying password');
+                
+                // Verify password
+                const passwordMatch = await bcrypt.compare(password, user.password_hash);
+                if (!passwordMatch) {
+                    console.log('LOGIN: Password mismatch');
+                    return res.status(401).json({ 
+                        success: false, 
+                        error: 'Invalid credentials' 
+                    });
+                }
+
+                console.log('LOGIN: Password verified, returning user data');
+
+                // Return user without password hash
+                return res.status(200).json({
+                    success: true,
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        fullName: user.full_name,
+                        phone: user.phone,
+                        createdAt: user.created_at
+                    }
+                });
+            } catch (loginError) {
+                console.error('LOGIN: Error during login:', loginError);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Login failed. Please try again.',
+                    details: process.env.NODE_ENV === 'development' ? loginError.message : undefined
+                });
+            }
         }
 
         // === GET PROFILE ===

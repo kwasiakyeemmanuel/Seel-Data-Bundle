@@ -29,18 +29,31 @@ export function getSupabaseAnonClient() {
 
 // Helper: Get user by email
 export async function getUserByEmail(email) {
-    const supabase = getSupabaseClient();
-    const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
-    
-    if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+    try {
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .single();
+        
+        if (error) {
+            // PGRST116 = not found, which is a valid case
+            if (error.code === 'PGRST116') {
+                console.log('getUserByEmail: User not found');
+                return null;
+            }
+            
+            // Other errors should be thrown
+            console.error('getUserByEmail error:', error);
+            throw new Error(error.message || 'Failed to fetch user');
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('getUserByEmail function error:', error);
         throw error;
     }
-    
-    return data;
 }
 
 // Helper: Create new user
