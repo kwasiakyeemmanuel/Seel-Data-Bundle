@@ -711,118 +711,83 @@ function handleLogin(event) {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
     submitBtn.disabled = true;
     
-    // Simulate network delay for better UX
+    // Login via backend API
     setTimeout(async () => {
-        console.log('🔐 LOGIN ATTEMPT:');
-        console.log('📧 Trying to login with:', email);
+        console.log('🔐 LOGIN: Authenticating via backend...');
+        console.log('📧 Email:', email);
         
-        let user = null;
-        
-        console.log('💾 Checking localStorage for users...');
         try {
-            const usersData = localStorage.getItem('seelDataUsers');
-            console.log('📦 Raw users data:', usersData ? 'Found' : 'Not found');
+            // Call backend login API
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'login',
+                    email: email,
+                    password: password
+                })
+            });
             
-            if (!usersData) {
-                console.error('❌ No users in localStorage!');
+            const result = await response.json();
+            
+            if (!response.ok || !result.success) {
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
-                toast.error('No users found. Please sign up first.');
+                toast.error(result.error || 'Invalid email or password');
                 return;
             }
             
-            const users = JSON.parse(usersData);
-            console.log('📊 Found', users.length, 'users in localStorage');
-            console.log('👥 User emails:', users.map(u => u.email));
+            console.log('✅ Login successful!');
+            const user = result.user;
             
-            // Find user by email/phone
-            const foundUser = users.find(u => u.email === email || u.phone === email);
+            // Store user session
+            const sessionUser = {
+                id: user.id,
+                name: user.fullName,
+                email: user.email,
+                phone: user.phone,
+                createdAt: user.createdAt
+            };
+            localStorage.setItem('currentUser', JSON.stringify(sessionUser));
             
-            if (!foundUser) {
-                console.log('❌ Email/phone not found');
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-                toast.error('Invalid email or password');
-                return;
-            }
+            console.log('✅ User authenticated!');
             
-            // Verify password (supports both hashed and plain for backwards compatibility)
-            console.log('🔐 Verifying password...');
-            let passwordMatch = false;
-            
-            if (window.PasswordUtils) {
-                passwordMatch = await window.PasswordUtils.verifyPassword(password, foundUser.password);
-            } else {
-                // Fallback to plain comparison if bcrypt not loaded
-                passwordMatch = password === foundUser.password;
-            }
-            
-            if (passwordMatch) {
-                console.log('✅ Password verified successfully!');
-                user = foundUser;
-            } else {
-                console.log('❌ Password verification failed');
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-                toast.error('Invalid email or password');
-                return;
-            }
-            
-            if (user) {
-                console.log('✅ User authenticated!');
-            } else {
-                console.log('❌ No matching user found');
-                console.log('🔍 Checking credentials:');
-                const emailMatch = users.find(u => u.email === email || u.phone === email);
-                if (emailMatch) {
-                    console.log('📧 Email/phone matches, but password is wrong');
-                } else {
-                    console.log('📧 Email/phone not found in database');
-                }
-            }
-        } catch (localError) {
-            console.error('❌ localStorage error:', localError);
+        } catch (error) {
+            console.error('❌ Login error:', error);
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
-            toast.error('Login system error. Please try again.');
+            toast.error(error.message || 'Login failed. Please try again.');
             return;
         }
         
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
         
-        if (user) {
-                // Remove password before saving to currentUser
-                const userWithoutPassword = {...user};
-                delete userWithoutPassword.password;
+        // Check if this is a new user or returning user
+        const isNewUser = sessionStorage.getItem('isNewUser') === 'true';
+        const signupTime = sessionStorage.getItem('signupTime');
+        const timeSinceSignup = signupTime ? Date.now() - parseInt(signupTime) : Infinity;
+        
+        // Show "Welcome" if new user within 3 minutes, otherwise "Welcome Back"
+        const isRecentSignup = isNewUser && timeSinceSignup < 180000;
+        const welcomeMessage = isRecentSignup ? 'Welcome!' : 'Welcome Back!';
+        const subMessage = isRecentSignup ? 'Your account is ready to use.' : 'You have successfully logged in.';
+        
+        // Clear the new user flag if it's been more than 3 minutes
+        if (timeSinceSignup >= 180000) {
+            sessionStorage.removeItem('isNewUser');
+            sessionStorage.removeItem('signupTime');
+        }
+        
+        // Close modal and update UI
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        closeLoginModal();
+        updateHeaderForLoggedInUser(user);
+        showServicesSection();
                 
-                // Save user to localStorage for session with encryption
-                const userData = JSON.stringify(userWithoutPassword);
-                const encryptedData = window.Security ? window.Security.encryptData(userData) : userData;
-                localStorage.setItem('currentUser', encryptedData);
-                
-                // Check if this is a new user or returning user
-                const isNewUser = sessionStorage.getItem('isNewUser') === 'true';
-                const signupTime = sessionStorage.getItem('signupTime');
-                const timeSinceSignup = signupTime ? Date.now() - parseInt(signupTime) : Infinity;
-                
-                // Show "Welcome" if new user within 3 minutes, otherwise "Welcome Back"
-                const isRecentSignup = isNewUser && timeSinceSignup < 180000; // 3 minutes = 180000ms
-                const welcomeMessage = isRecentSignup ? 'Welcome!' : 'Welcome Back!';
-                const subMessage = isRecentSignup ? 'Your account is ready to use.' : 'You have successfully logged in.';
-                
-                // Clear the new user flag if it's been more than 3 minutes
-                if (timeSinceSignup >= 180000) {
-                    sessionStorage.removeItem('isNewUser');
-                    sessionStorage.removeItem('signupTime');
-                }
-                
-                // Close modal and update UI
-                closeLoginModal();
-                updateHeaderForLoggedInUser(userWithoutPassword);
-                showServicesSection();
-                
-                // Show success message
+        // Show success message
                 const successModal = document.createElement('div');
                 successModal.className = 'modal';
                 successModal.id = 'loginSuccessModal';
@@ -841,10 +806,6 @@ function handleLogin(event) {
             `;
             document.body.appendChild(successModal);
             successModal.style.display = 'flex';
-        } else {
-            console.log('❌ Login failed - invalid credentials');
-            toast.error('Invalid email/phone or password. Please try again.');
-        }
     }, 800);
 }
 
@@ -1025,49 +986,57 @@ function handleSignup(event) {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
     submitBtn.disabled = true;
     
-    // Create account directly without email verification
+    // Create account via backend API
     setTimeout(async () => {
-        console.log('🔐 SIGNUP DEBUG: Starting account creation...');
+        console.log('🔐 SIGNUP: Creating account via backend...');
         console.log('📧 Email:', userData.email);
         console.log('📱 Phone:', userData.phone);
         console.log('👤 Name:', userData.name);
         
         try {
-            console.log('💾 Using localStorage for signup...');
+            // Call backend signup API
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'signup',
+                    email: userData.email,
+                    fullName: userData.name,
+                    phone: userData.phone,
+                    password: password
+                })
+            });
             
-            // Hash password before storing
-            console.log('🔒 Hashing password...');
-            if (window.PasswordUtils) {
-                userData.password = await window.PasswordUtils.hashPassword(password);
-                console.log('✅ Password hashed successfully');
-            } else {
-                console.warn('⚠️ Password hashing not available - storing plain password (NOT RECOMMENDED)');
+            const result = await response.json();
+            
+            if (!response.ok || !result.success) {
+                if (response.status === 409) {
+                    throw new Error('Account already exists with this email or phone');
+                }
+                throw new Error(result.error || 'Signup failed');
             }
             
-            const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
-            console.log('📊 Current users in database:', users.length);
+            console.log('✅ Account created successfully!');
+            const newUser = result.user;
             
-            const existingUser = users.find(u => u.email === userData.email || u.phone === userData.phone);
+            // Store user session in localStorage
+            const sessionUser = {
+                id: newUser.id,
+                name: newUser.fullName,
+                email: newUser.email,
+                phone: newUser.phone,
+                createdAt: newUser.createdAt
+            };
+            localStorage.setItem('currentUser', JSON.stringify(sessionUser));
             
-            if (existingUser) {
-                console.log('❌ User already exists!');
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-                toast.error('Account with this email or phone already exists!');
-                return;
-            }
-            
-            // Add new user to the array
-            users.push(userData);
-            localStorage.setItem('seelDataUsers', JSON.stringify(users));
-            
-            console.log('✅ User saved to localStorage with hashed password!');
-            console.log('📊 Total users now:', users.length);
+            console.log('✅ User session saved!');
         } catch (error) {
-            console.error('❌ LocalStorage error:', error);
+            console.error('❌ Signup error:', error);
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
-            toast.error('Failed to create account. Please try again.');
+            toast.error(error.message || 'Failed to create account. Please try again.');
             return;
         }
         

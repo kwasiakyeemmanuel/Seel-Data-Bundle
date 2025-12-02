@@ -11,7 +11,8 @@
   "author": "Seel Data",
   "license": "MIT",
   "dependencies": {
-    "bcryptjs": "^2.4.3"
+    "bcryptjs": "^2.4.3",
+    "@supabase/supabase-js": "^2.39.0"
   },
   "devDependencies": {
     "@vercel/node": "^3.0.0"
