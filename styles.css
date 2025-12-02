@@ -1097,11 +1097,13 @@ body {
     color: var(--primary-color);
     cursor: pointer;
     padding: 10px;
-    z-index: 1001;
+    z-index: 1002;
     position: absolute;
     right: 20px;
     top: 50%;
     transform: translateY(-50%);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 @media (max-width: 768px) {
@@ -1138,9 +1140,10 @@ body {
     .mobile-menu-toggle {
         display: block;
         position: absolute;
-        right: 0;
+        right: 20px;
         top: 50%;
         transform: translateY(-50%);
+        z-index: 1002;
     }
 
     .logo {
@@ -1191,9 +1194,10 @@ body {
 
     .auth-buttons {
         position: absolute;
-        right: 60px;
+        right: 70px;
         top: 50%;
         transform: translateY(-50%);
+        z-index: 1001;
     }
 
     .auth-buttons .btn {
