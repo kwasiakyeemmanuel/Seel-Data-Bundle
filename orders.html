@@ -181,80 +181,128 @@
             document.getElementById('userName').textContent = currentUser.name;
             document.getElementById('userInfo').style.display = 'flex';
             loadOrders();
+            
+            // Auto-refresh orders every 30 seconds for real-time status updates
+            setInterval(() => {
+                loadOrders();
+            }, 30000);
         }
         
-        function loadOrders() {
+        async function loadOrders() {
             const ordersContent = document.getElementById('ordersContent');
-            const orders = JSON.parse(localStorage.getItem(`userOrders_${currentUser.email}`) || '[]');
             
-            if (orders.length > 0) {
-                ordersContent.innerHTML = orders.map(order => `
-                    <div class="order-card">
-                        <div class="order-header">
-                            <div class="order-id">
-                                Order #${order.id}
-                            </div>
-                                    <div class="order-status status-${order.status}">
-                                        ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                                    </div>
+            try {
+                // Fetch orders from Supabase via API
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'history', 
+                        userId: currentUser.id 
+                    })
+                });
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server error: Invalid response format');
+                }
+                
+                const result = await response.json();
+                
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Failed to load orders');
+                }
+                
+                const orders = result.orders || [];
+                
+                if (orders.length > 0) {
+                    ordersContent.innerHTML = orders.map(order => {
+                        const statusColors = {
+                            completed: '#28a745',
+                            pending: '#ffc107',
+                            failed: '#dc3545'
+                        };
+                        return `
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div class="order-id">
+                                    Order #${order.id.substring(0, 8).toUpperCase()}
                                 </div>
-                                <div class="order-details">
-                                    <div class="order-detail-item">
-                                        <i class="fas fa-sim-card"></i>
-                                        <div>
-                                            <div class="label">Service</div>
-                                            <div class="value">${order.service_name}</div>
-                                        </div>
-                                    </div>
-                                    <div class="order-detail-item">
-                                        <i class="fas fa-database"></i>
-                                        <div>
-                                            <div class="label">Bundle</div>
-                                            <div class="value">${order.bundle_size}</div>
-                                        </div>
-                                    </div>
-                                    <div class="order-detail-item">
-                                        <i class="fas fa-phone"></i>
-                                        <div>
-                                            <div class="label">Phone Number</div>
-                                            <div class="value">${order.phone_number}</div>
-                                        </div>
-                                    </div>
-                                    <div class="order-detail-item">
-                                        <i class="fas fa-credit-card"></i>
-                                        <div>
-                                            <div class="label">Payment Method</div>
-                                            <div class="value">${order.payment_method.toUpperCase()}</div>
-                                        </div>
-                                    </div>
-                                    ${order.payment_reference ? `
-                                    <div class="order-detail-item">
-                                        <i class="fas fa-receipt"></i>
-                                        <div>
-                                            <div class="label">Reference</div>
-                                            <div class="value">${order.payment_reference}</div>
-                                        </div>
-                                    </div>
-                                    ` : ''}
-                                    <div class="order-detail-item">
-                                        <i class="fas fa-calendar"></i>
-                                        <div>
-                                            <div class="label">Order Date</div>
-                                            <div class="value">${new Date(order.created_at).toLocaleString()}</div>
-                                        </div>
-                                    </div>
+                                <div class="order-status" style="background: ${statusColors[order.status] || '#6c757d'}; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                    ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                 </div>
                             </div>
-                        `).join('');
-            } else {
+                            <div class="order-details">
+                                <div class="order-detail-item">
+                                    <i class="fas fa-sim-card"></i>
+                                    <div>
+                                        <div class="label">Network</div>
+                                        <div class="value">${order.network}</div>
+                                    </div>
+                                </div>
+                                <div class="order-detail-item">
+                                    <i class="fas fa-database"></i>
+                                    <div>
+                                        <div class="label">Bundle</div>
+                                        <div class="value">${order.dataType}</div>
+                                    </div>
+                                </div>
+                                <div class="order-detail-item">
+                                    <i class="fas fa-phone"></i>
+                                    <div>
+                                        <div class="label">Phone Number</div>
+                                        <div class="value">${order.beneficiaryNumber}</div>
+                                    </div>
+                                </div>
+                                <div class="order-detail-item">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <div>
+                                        <div class="label">Amount</div>
+                                        <div class="value">GH₵${parseFloat(order.price).toFixed(2)}</div>
+                                    </div>
+                                </div>
+                                ${order.paymentReference ? `
+                                <div class="order-detail-item">
+                                    <i class="fas fa-receipt"></i>
+                                    <div>
+                                        <div class="label">Reference</div>
+                                        <div class="value">${order.paymentReference}</div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                <div class="order-detail-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <div>
+                                        <div class="label">Order Date</div>
+                                        <div class="value">${new Date(order.createdAt).toLocaleString()}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `}).join('');
+                } else {
+                    ordersContent.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-shopping-bag"></i>
+                            <h2>No Orders Yet</h2>
+                            <p style="color: #636e72; margin: 10px 0 20px;">You haven't made any purchases yet</p>
+                            <a href="index.html#services" class="btn btn-primary">
+                                <i class="fas fa-shopping-cart"></i> Start Shopping
+                            </a>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading orders:', error);
                 ordersContent.innerHTML = `
                     <div class="empty-state">
-                        <i class="fas fa-shopping-bag"></i>
-                        <h2>No Orders Yet</h2>
-                        <p style="color: #636e72; margin: 10px 0 20px;">You haven't made any purchases yet</p>
-                        <a href="index.html#services" class="btn btn-primary">
-                            <i class="fas fa-shopping-cart"></i> Start Shopping
-                        </a>
+                        <i class="fas fa-exclamation-circle" style="color: #dc3545;"></i>
+                        <h2>Failed to Load Orders</h2>
+                        <p style="color: #636e72; margin: 10px 0 20px;">${error.message}</p>
+                        <button onclick="loadOrders()" class="btn btn-primary">
+                            <i class="fas fa-redo"></i> Try Again
+                        </button>
                     </div>
                 `;
             }
