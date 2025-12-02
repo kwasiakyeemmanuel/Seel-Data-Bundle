@@ -17,6 +17,14 @@ export default async function handler(req, res) {
             return res.status(200).end();
         }
 
+        // Only allow POST requests
+        if (req.method !== 'POST') {
+            return res.status(405).json({ 
+                success: false,
+                error: 'Method not allowed. Use POST.' 
+            });
+        }
+
         try {
             // Validate request body exists
             if (!req.body) {
