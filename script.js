@@ -1697,8 +1697,8 @@ function showPurchaseModal(serviceName) {
                             <strong>Secure Payment Process:</strong><br>
                             ✓ Pay securely with Paystack (Cards, Mobile Money, Bank Transfer)<br>
                             ✓ Instant payment confirmation<br>
-                            ✓ Data delivered automatically within 5 minutes<br>
-                            ✓ SMS confirmation sent to your number
+                            ✓ Fast and reliable data delivery<br>
+                            ✓ Email confirmation sent to your inbox
                         </div>
                     </div>
 
