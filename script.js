@@ -815,7 +815,7 @@ function showSignupModal() {
 
                     <div class="form-group">
                         <label for="signupPhone">
-                            <i class="fas fa-phone"></i> Phone Number *
+                            <i class="fas fa-phone"></i> Beneficiary Number *
                         </label>
                         <input 
                             type="tel" 
@@ -1639,7 +1639,7 @@ function showPurchaseModal(serviceName) {
                 <form id="purchaseForm" onsubmit="handlePurchase(event)">
                     <div class="form-group">
                         <label for="phoneNumber">
-                            <i class="fas fa-phone"></i> Phone Number *
+                            <i class="fas fa-phone"></i> Beneficiary Number *
                         </label>
                         <input 
                             type="tel" 
