@@ -1210,21 +1210,22 @@ body {
     }
 
     .user-menu-btn {
-        padding: 6px 10px;
+        padding: 8px 12px;
         min-width: auto;
-        font-size: 13px;
+        font-size: 14px;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         white-space: nowrap;
     }
 
     .user-menu-btn span {
-        display: inline-block;
-        max-width: 70px;
+        display: inline-block !important;
+        max-width: 120px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        font-weight: 600;
     }
     
     .user-menu-btn i:first-child {
@@ -1466,6 +1467,22 @@ body {
 
     .hero-subtitle {
         font-size: 15px;
+    }
+    
+    /* Ensure user name is visible on small mobile screens */
+    .user-menu-btn {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+    
+    .user-menu-btn span {
+        display: inline-block !important;
+        max-width: 100px;
+        font-size: 13px;
+    }
+    
+    .auth-buttons {
+        right: 55px;
     }
 
     .section-header h2 {
