@@ -655,41 +655,49 @@ function handleLogin(event) {
     
     // Simulate network delay for better UX
     setTimeout(async () => {
+        let user = null;
+        
         try {
-            let user = null;
-            
             // Try Firebase first if available
-            try {
-                if (window.firebaseDB && window.FirebaseDB) {
-                    console.log('🔥 Attempting Firebase login...');
+            if (window.firebaseDB && window.FirebaseDB) {
+                console.log('🔥 Attempting Firebase login...');
+                try {
                     const result = await window.FirebaseDB.getUser(email);
                     if (result.success && result.user && result.user.password === password) {
                         user = result.user;
                         console.log('✅ User authenticated via Firebase');
                     }
-                } else {
-                    throw new Error('Firebase not initialized');
+                } catch (fbError) {
+                    console.warn('⚠️ Firebase login error:', fbError.message);
                 }
-            } catch (firebaseError) {
-                console.warn('⚠️ Firebase login failed, trying localStorage:', firebaseError.message);
             }
-            
-            // Fallback to localStorage if Firebase didn't work
-            if (!user) {
-                console.log('💾 Using localStorage for login...');
+        } catch (error) {
+            console.warn('⚠️ Firebase check failed:', error.message);
+        }
+        
+        // Fallback to localStorage if Firebase didn't work
+        if (!user) {
+            console.log('💾 Using localStorage for login...');
+            try {
                 const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+                console.log('📊 Found', users.length, 'users in localStorage');
                 user = users.find(u => 
                     (u.email === email || u.phone === email) && u.password === password
                 );
                 if (user) {
                     console.log('✅ User authenticated via localStorage');
+                } else {
+                    console.log('❌ No matching user found');
                 }
+            } catch (localError) {
+                console.error('❌ localStorage error:', localError);
             }
-            
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            
-            if (user) {
+        }
+        
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        
+        if (user) {
                 // Remove password before saving to currentUser
                 const userWithoutPassword = {...user};
                 delete userWithoutPassword.password;
@@ -740,13 +748,8 @@ function handleLogin(event) {
             document.body.appendChild(successModal);
             successModal.style.display = 'flex';
         } else {
+            console.log('❌ Login failed - invalid credentials');
             toast.error('Invalid email/phone or password. Please try again.');
-        }
-        } catch (error) {
-            console.error('❌ Login error:', error);
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            toast.error('Login failed. Please try again.');
         }
     }, 800);
 }
