@@ -45,21 +45,40 @@ export async function getUserByEmail(email) {
 
 // Helper: Create new user
 export async function createUser(userData) {
-    const supabase = getSupabaseClient();
-    const { data, error } = await supabase
-        .from('users')
-        .insert([{
-            email: userData.email,
-            full_name: userData.fullName,
-            phone: userData.phone,
-            password_hash: userData.passwordHash,
-            created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+        const supabase = getSupabaseClient();
+        
+        // Validate required fields
+        if (!userData.email || !userData.fullName || !userData.phone || !userData.passwordHash) {
+            throw new Error('Missing required user data fields');
+        }
+        
+        const { data, error } = await supabase
+            .from('users')
+            .insert([{
+                email: userData.email,
+                full_name: userData.fullName,
+                phone: userData.phone,
+                password_hash: userData.passwordHash,
+                created_at: new Date().toISOString()
+            }])
+            .select()
+            .single();
+        
+        if (error) {
+            console.error('Supabase createUser error:', error);
+            throw new Error(error.message || 'Failed to create user');
+        }
+        
+        if (!data) {
+            throw new Error('No data returned from user creation');
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('createUser function error:', error);
+        throw error;
+    }
 }
 
 // Helper: Create order

@@ -5,7 +5,7 @@ import { getUserByEmail, createUser } from '../supabase-config.js';
 import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {
-    // Enable CORS and set Content-Type
+    // Enable CORS and set Content-Type FIRST (before any other logic)
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -16,9 +16,25 @@ export default async function handler(req, res) {
         return res.status(200).end();
     }
 
-    const { action } = req.body;
-
     try {
+        // Validate request body exists
+        if (!req.body) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Request body is required' 
+            });
+        }
+
+        const { action } = req.body;
+
+        // Validate action exists
+        if (!action) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Action parameter is required' 
+            });
+        }
+
         // === SIGNUP ===
         if (action === 'signup' && req.method === 'POST') {
             const { email, fullName, phone, password } = req.body;
@@ -44,12 +60,29 @@ export default async function handler(req, res) {
             const passwordHash = await bcrypt.hash(password, 10);
 
             // Create user
-            const newUser = await createUser({
-                email,
-                fullName,
-                phone,
-                passwordHash
-            });
+            let newUser;
+            try {
+                newUser = await createUser({
+                    email,
+                    fullName,
+                    phone,
+                    passwordHash
+                });
+            } catch (dbError) {
+                console.error('Database error creating user:', dbError);
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'Failed to create user account. Please try again.',
+                    details: process.env.NODE_ENV === 'development' ? dbError.message : undefined
+                });
+            }
+
+            if (!newUser) {
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'Failed to create user account. Please try again.' 
+                });
+            }
 
             // Return user without password hash
             return res.status(201).json({
