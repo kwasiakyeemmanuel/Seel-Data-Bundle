@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="styles.css">
+    <script src="security.js"></script>
     <style>
         .profile-container {
             max-width: 800px;
@@ -189,10 +190,10 @@
     </div>
     
     <script src="toast.js"></script>
-    <script src="script.js?v=2"></script>
+    <script src="script.js?v=3"></script>
     <script>
         // Load user profile
-        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const currentUser = getCurrentUser() || {};
         
         if (!currentUser.id) {
             window.location.href = 'index.html';
@@ -301,8 +302,5 @@
             }
         }
     </script>
-    
-    <!-- Security Module -->
-    <script src="security.js"></script>
 </body>
 </html>
