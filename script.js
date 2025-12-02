@@ -2899,7 +2899,10 @@ function verifyEmailNow(token, email) {
         const currentUser = getCurrentUser();
         if (currentUser && currentUser.email === email) {
             currentUser.emailVerified = true;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            // Save with encryption
+            const userData = JSON.stringify(currentUser);
+            const encryptedData = window.Security ? window.Security.encryptData(userData) : userData;
+            localStorage.setItem('currentUser', encryptedData);
         }
     }
     
