@@ -718,6 +718,7 @@ function handleLogin(event) {
         
         try {
             // Call backend login API
+            console.log('📡 Sending login request to /api/users...');
             const response = await fetch('/api/users', {
                 method: 'POST',
                 headers: {
@@ -730,15 +731,22 @@ function handleLogin(event) {
                 })
             });
             
+            console.log('📥 Login response status:', response.status);
+            console.log('📥 Login response ok:', response.ok);
+            
             // Check if response is JSON
             const contentType = response.headers.get('content-type');
+            console.log('📥 Login Content-Type:', contentType);
+            
             if (!contentType || !contentType.includes('application/json')) {
                 const text = await response.text();
-                console.error('❌ Non-JSON response:', text.substring(0, 200));
+                console.error('❌ Non-JSON login response:', text.substring(0, 500));
+                console.error('❌ Full response headers:', Array.from(response.headers.entries()));
                 throw new Error('Server error: Invalid response format. Please try again.');
             }
             
             const result = await response.json();
+            console.log('📥 Login result:', result);
             
             if (!response.ok || !result.success) {
                 submitBtn.innerHTML = originalText;

@@ -5,18 +5,17 @@ import { getUserByEmail, createUser } from '../supabase-config.js';
 import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {
-    // Enable CORS and set Content-Type FIRST (before any other logic)
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Content-Type', 'application/json');
-
-    // Handle preflight
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-
     try {
+        // Enable CORS and set Content-Type FIRST (before any other logic)
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Content-Type', 'application/json');
+
+        // Handle preflight
+        if (req.method === 'OPTIONS') {
+            return res.status(200).end();
+        }
         // Validate request body exists
         if (!req.body) {
             return res.status(400).json({ 
@@ -195,11 +194,27 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error('User API error:', error);
+        console.error('User API error (inner):', error);
         return res.status(500).json({ 
             success: false, 
             error: 'Internal server error',
             details: error.message 
         });
+    }
+    } catch (outerError) {
+        console.error('User API error (outer - critical):', outerError);
+        // Ensure we always return JSON even if headers fail
+        try {
+            res.setHeader('Content-Type', 'application/json');
+            return res.status(500).json({
+                success: false,
+                error: 'Critical server error',
+                details: outerError.message
+            });
+        } catch (finalError) {
+            // Last resort - just end the response
+            console.error('Failed to send error response:', finalError);
+            return res.status(500).end('{"success":false,"error":"Server error"}');
+        }
     }
 }
