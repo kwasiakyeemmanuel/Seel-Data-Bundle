@@ -655,22 +655,50 @@ function handleLogin(event) {
     
     // Simulate network delay for better UX
     setTimeout(async () => {
+        console.log('🔐 LOGIN ATTEMPT:');
+        console.log('📧 Trying to login with:', email);
+        
         let user = null;
         
-        console.log('💾 Using localStorage for login...');
+        console.log('💾 Checking localStorage for users...');
         try {
-            const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+            const usersData = localStorage.getItem('seelDataUsers');
+            console.log('📦 Raw users data:', usersData ? 'Found' : 'Not found');
+            
+            if (!usersData) {
+                console.error('❌ No users in localStorage!');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                toast.error('No users found. Please sign up first.');
+                return;
+            }
+            
+            const users = JSON.parse(usersData);
             console.log('📊 Found', users.length, 'users in localStorage');
+            console.log('👥 User emails:', users.map(u => u.email));
+            
             user = users.find(u => 
                 (u.email === email || u.phone === email) && u.password === password
             );
+            
             if (user) {
-                console.log('✅ User authenticated via localStorage');
+                console.log('✅ User found and authenticated!');
             } else {
                 console.log('❌ No matching user found');
+                console.log('🔍 Checking credentials:');
+                const emailMatch = users.find(u => u.email === email || u.phone === email);
+                if (emailMatch) {
+                    console.log('📧 Email/phone matches, but password is wrong');
+                } else {
+                    console.log('📧 Email/phone not found in database');
+                }
             }
         } catch (localError) {
             console.error('❌ localStorage error:', localError);
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            toast.error('Login system error. Please try again.');
+            return;
         }
         
         submitBtn.innerHTML = originalText;
