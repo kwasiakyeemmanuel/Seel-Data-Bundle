@@ -719,6 +719,14 @@ function handleLogin(event) {
         try {
             // Call backend login API
             console.log('📡 Sending login request to /api/users...');
+            
+            // Create abort controller for timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                console.error('⏱️ Request timeout after 30 seconds');
+                controller.abort();
+            }, 30000);
+            
             const response = await fetch('/api/users', {
                 method: 'POST',
                 headers: {
@@ -728,8 +736,14 @@ function handleLogin(event) {
                     action: 'login',
                     email: email,
                     password: password
-                })
+                }),
+                signal: controller.signal
+            }).catch(fetchError => {
+                console.error('❌ Fetch failed:', fetchError);
+                throw fetchError;
             });
+            
+            clearTimeout(timeoutId);
             
             console.log('📥 Login response status:', response.status);
             console.log('📥 Login response ok:', response.ok);
@@ -772,9 +786,19 @@ function handleLogin(event) {
             
         } catch (error) {
             console.error('❌ Login error:', error);
+            console.error('❌ Error name:', error.name);
+            console.error('❌ Error stack:', error.stack);
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
-            toast.error(error.message || 'Login failed. Please try again.');
+            
+            // Handle specific error types
+            if (error.name === 'AbortError') {
+                toast.error('Request timeout. Please check your connection and try again.', 5000);
+            } else if (error.message && error.message.includes('Failed to fetch')) {
+                toast.error('Network error. Please check your internet connection.', 5000);
+            } else {
+                toast.error(error.message || 'Login failed. Please try again.');
+            }
             return;
         }
         
