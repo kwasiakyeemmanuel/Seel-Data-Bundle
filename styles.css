@@ -1194,7 +1194,7 @@ body {
 
     .auth-buttons {
         position: absolute;
-        right: 70px;
+        right: 65px;
         top: 50%;
         transform: translateY(-50%);
         z-index: 1001;
@@ -1209,18 +1209,26 @@ body {
         position: static;
     }
 
+    .user-menu-btn {
+        padding: 6px 10px;
+        min-width: auto;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
     .user-menu-btn span {
-        display: inline;
-        max-width: 80px;
+        display: inline-block;
+        max-width: 70px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-
-    .user-menu-btn {
-        padding: 8px 12px;
-        min-width: auto;
-        font-size: 14px;
+    
+    .user-menu-btn i:first-child {
+        font-size: 16px;
     }
     
     .user-menu-btn i:last-child {
