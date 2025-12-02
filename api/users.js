@@ -16,23 +16,25 @@ export default async function handler(req, res) {
         if (req.method === 'OPTIONS') {
             return res.status(200).end();
         }
-        // Validate request body exists
-        if (!req.body) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Request body is required' 
-            });
-        }
 
-        const { action } = req.body;
+        try {
+            // Validate request body exists
+            if (!req.body) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Request body is required' 
+                });
+            }
 
-        // Validate action exists
-        if (!action) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Action parameter is required' 
-            });
-        }
+            const { action } = req.body;
+
+            // Validate action exists
+            if (!action) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Action parameter is required' 
+                });
+            }
 
         // === SIGNUP ===
         if (action === 'signup' && req.method === 'POST') {
@@ -187,20 +189,21 @@ export default async function handler(req, res) {
             });
         }
 
-        // Invalid action
-        return res.status(400).json({ 
-            success: false, 
-            error: 'Invalid action' 
-        });
+            // Invalid action
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Invalid action' 
+            });
 
-    } catch (error) {
-        console.error('User API error (inner):', error);
-        return res.status(500).json({ 
-            success: false, 
-            error: 'Internal server error',
-            details: error.message 
-        });
-    }
+        } catch (error) {
+            console.error('User API error (inner):', error);
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Internal server error',
+                details: error.message 
+            });
+        }
+        
     } catch (outerError) {
         console.error('User API error (outer - critical):', outerError);
         // Ensure we always return JSON even if headers fail
