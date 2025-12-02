@@ -657,41 +657,20 @@ function handleLogin(event) {
     setTimeout(async () => {
         let user = null;
         
+        console.log('💾 Using localStorage for login...');
         try {
-            // Try Firebase first if available
-            if (window.firebaseDB && window.FirebaseDB) {
-                console.log('🔥 Attempting Firebase login...');
-                try {
-                    const result = await window.FirebaseDB.getUser(email);
-                    if (result.success && result.user && result.user.password === password) {
-                        user = result.user;
-                        console.log('✅ User authenticated via Firebase');
-                    }
-                } catch (fbError) {
-                    console.warn('⚠️ Firebase login error:', fbError.message);
-                }
+            const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+            console.log('📊 Found', users.length, 'users in localStorage');
+            user = users.find(u => 
+                (u.email === email || u.phone === email) && u.password === password
+            );
+            if (user) {
+                console.log('✅ User authenticated via localStorage');
+            } else {
+                console.log('❌ No matching user found');
             }
-        } catch (error) {
-            console.warn('⚠️ Firebase check failed:', error.message);
-        }
-        
-        // Fallback to localStorage if Firebase didn't work
-        if (!user) {
-            console.log('💾 Using localStorage for login...');
-            try {
-                const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
-                console.log('📊 Found', users.length, 'users in localStorage');
-                user = users.find(u => 
-                    (u.email === email || u.phone === email) && u.password === password
-                );
-                if (user) {
-                    console.log('✅ User authenticated via localStorage');
-                } else {
-                    console.log('❌ No matching user found');
-                }
-            } catch (localError) {
-                console.error('❌ localStorage error:', localError);
-            }
+        } catch (localError) {
+            console.error('❌ localStorage error:', localError);
         }
         
         submitBtn.innerHTML = originalText;
@@ -939,68 +918,33 @@ function handleSignup(event) {
         console.log('👤 Name:', userData.name);
         
         try {
-            // Try Firebase first if available
-            if (window.firebaseDB && window.FirebaseDB) {
-                console.log('🔥 Attempting Firebase signup...');
-                
-                try {
-                    // Check if user exists in Firebase
-                    const existingUserResult = await window.FirebaseDB.getUser(userData.email);
-                    if (existingUserResult.success && existingUserResult.user) {
-                        console.log('❌ User already exists in Firebase!');
-                        submitBtn.innerHTML = originalText;
-                        submitBtn.disabled = false;
-                        toast.error('Account with this email already exists!');
-                        return;
-                    }
-                    
-                    // Create user in Firebase
-                    const result = await window.FirebaseDB.createUser(userData);
-                    if (result.success) {
-                        console.log('✅ User saved to Firebase!');
-                    } else {
-                        console.warn('⚠️ Firebase save failed, using localStorage fallback');
-                        throw new Error('Firebase unavailable');
-                    }
-                } catch (firebaseError) {
-                    console.warn('⚠️ Firebase error, falling back to localStorage:', firebaseError.message);
-                    // Fall through to localStorage
-                    throw firebaseError;
-                }
-            } else {
-                throw new Error('Firebase not initialized');
-            }
-        } catch (error) {
-            // Fallback to localStorage
             console.log('💾 Using localStorage for signup...');
             
-            try {
-                const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
-                console.log('📊 Current users in database:', users.length);
-                
-                const existingUser = users.find(u => u.email === userData.email || u.phone === userData.phone);
-                
-                if (existingUser) {
-                    console.log('❌ User already exists!');
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                    toast.error('Account with this email or phone already exists!');
-                    return;
-                }
-                
-                // Add new user to the array
-                users.push(userData);
-                localStorage.setItem('seelDataUsers', JSON.stringify(users));
-                
-                console.log('✅ User saved to localStorage!');
-                console.log('📊 Total users now:', users.length);
-            } catch (localStorageError) {
-                console.error('❌ LocalStorage error:', localStorageError);
+            const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+            console.log('📊 Current users in database:', users.length);
+            
+            const existingUser = users.find(u => u.email === userData.email || u.phone === userData.phone);
+            
+            if (existingUser) {
+                console.log('❌ User already exists!');
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
-                toast.error('Failed to create account. Please try again.');
+                toast.error('Account with this email or phone already exists!');
                 return;
             }
+            
+            // Add new user to the array
+            users.push(userData);
+            localStorage.setItem('seelDataUsers', JSON.stringify(users));
+            
+            console.log('✅ User saved to localStorage!');
+            console.log('📊 Total users now:', users.length);
+        } catch (error) {
+            console.error('❌ LocalStorage error:', error);
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            toast.error('Failed to create account. Please try again.');
+            return;
         }
         
         console.log('🌐 Domain:', window.location.hostname);
