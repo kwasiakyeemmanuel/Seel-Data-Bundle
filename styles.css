@@ -1926,9 +1926,10 @@ body {
     align-items: center;
     justify-content: center;
     box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
-    z-index: 9999;
+    z-index: 99999;
     transition: all 0.3s ease;
     text-decoration: none;
+    pointer-events: auto;
 }
 
 .whatsapp-float:hover {

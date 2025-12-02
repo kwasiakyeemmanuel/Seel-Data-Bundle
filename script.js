@@ -2377,6 +2377,15 @@ function reorder(orderIndex) {
 
 function initializeWhatsAppSupport() {
     // Add floating WhatsApp button
+    console.log('🔧 Initializing WhatsApp support button...');
+    
+    // Check if button already exists
+    const existingBtn = document.querySelector('.whatsapp-float');
+    if (existingBtn) {
+        console.log('✅ WhatsApp button already exists');
+        return;
+    }
+    
     const whatsappBtn = document.createElement('a');
     whatsappBtn.href = 'https://wa.me/233537922905?text=Hello%20Seel%20Data,%20I%20need%20help';
     whatsappBtn.target = '_blank';
@@ -2384,6 +2393,7 @@ function initializeWhatsAppSupport() {
     whatsappBtn.innerHTML = '<i class=\"fab fa-whatsapp\"></i>';
     whatsappBtn.title = 'Chat with us on WhatsApp';
     document.body.appendChild(whatsappBtn);
+    console.log('✅ WhatsApp button added to page');
 }
 
 function showFAQ() {
