@@ -1035,7 +1035,7 @@ function handleLogout() {
 
 // Show delete account modal
 function showDeleteAccountModal() {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    const currentUser = getCurrentUser();
     if (!currentUser) {
         toast.error('Please login to delete your account');
         return;
@@ -1116,7 +1116,7 @@ function closeDeleteAccountModal() {
 function handleDeleteAccount(event) {
     event.preventDefault();
     
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const currentUser = getCurrentUser();
     const password = document.getElementById('deletePassword').value;
     
     // Get all users
@@ -1568,7 +1568,7 @@ function selectService(serviceName) {
 // Show purchase modal
 function showPurchaseModal(serviceName) {
     // Get current user email
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const currentUser = getCurrentUser() || {};
     const userEmail = currentUser.email || '';
     
     const modal = document.createElement('div');
@@ -1877,7 +1877,7 @@ function verifyPayment(reference, orderData) {
     verifyingModal.style.display = 'flex';
     
     // Get current user
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const currentUser = getCurrentUser() || {};
     
     // Simulate payment verification
     setTimeout(async () => {
@@ -2083,7 +2083,7 @@ function initializeFavorites() {
 }
 
 function toggleFavorite(serviceName, btn) {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    const currentUser = getCurrentUser();
     if (!currentUser) {
         toast.warning('Please login to add favorites');
         showLoginModal();
@@ -2109,7 +2109,7 @@ function toggleFavorite(serviceName, btn) {
 }
 
 function showFavoritesModal() {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    const currentUser = getCurrentUser();
     if (!currentUser) {
         toast.warning('Please login to view favorites');
         showLoginModal();
@@ -2172,7 +2172,7 @@ function buyFavorite(serviceName) {
 // ========== TRANSACTION HISTORY & RECEIPTS ==========
 
 function showTransactionHistory() {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    const currentUser = getCurrentUser();
     if (!currentUser) {
         toast.warning('Please login to view transaction history');
         showLoginModal();
@@ -2243,7 +2243,7 @@ function closeTransactionHistory() {
 }
 
 function downloadReceipt(orderIndex) {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const currentUser = getCurrentUser();
     const orders = JSON.parse(localStorage.getItem('userOrders_' + currentUser.email) || '[]');
     const order = orders.reverse()[orderIndex];
     
@@ -2295,7 +2295,7 @@ function downloadReceipt(orderIndex) {
 }
 
 function reorder(orderIndex) {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const currentUser = getCurrentUser();
     const orders = JSON.parse(localStorage.getItem('userOrders_' + currentUser.email) || '[]');
     const order = orders.reverse()[orderIndex];
     
@@ -2552,7 +2552,7 @@ function showTestimonials() {
 }
 
 function showAddReviewForm() {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    const currentUser = getCurrentUser();
     if (!currentUser) {
         toast.warning('Please login to write a review');
         closeTestimonialsModal();
@@ -2616,7 +2616,7 @@ function selectRating(rating) {
 }
 
 function submitReview() {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const currentUser = getCurrentUser();
     const rating = parseInt(document.getElementById('selectedRating').value);
     const comment = document.getElementById('reviewComment').value.trim();
     
@@ -2671,7 +2671,7 @@ function closeTestimonialsModal() {
 // ========== USER DASHBOARD ==========
 
 function showUserDashboard() {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    const currentUser = getCurrentUser();
     if (!currentUser) {
         toast.warning('Please login to view your dashboard');
         showLoginModal();
@@ -2896,7 +2896,7 @@ function verifyEmailNow(token, email) {
         users[userIndex].emailVerified = true;
         localStorage.setItem('seelDataUsers', JSON.stringify(users));
         
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const currentUser = getCurrentUser();
         if (currentUser && currentUser.email === email) {
             currentUser.emailVerified = true;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
@@ -2921,7 +2921,7 @@ function generate2FACode() {
 }
 
 function send2FACode(phone) {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const currentUser = getCurrentUser() || {};
     const userEmail = currentUser.email || 'customer@example.com';
     
     const code = generate2FACode();
@@ -3042,7 +3042,7 @@ function verify2FACode(phone, enteredCode) {
 }
 
 function show2FASetup() {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const currentUser = getCurrentUser();
     if (!currentUser) {
         toast.error('Please login first');
         return;
@@ -3419,7 +3419,7 @@ async function sendEmailNotification(recipientEmail, subject, htmlContent) {
 }
 
 function sendPurchaseConfirmationEmail(orderData) {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const currentUser = getCurrentUser() || {};
     const userEmail = currentUser.email || 'customer@example.com';
     
     const subject = `✅ Order Confirmed - #${orderData.id}`;
