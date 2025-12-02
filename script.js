@@ -1692,13 +1692,13 @@ function showPurchaseModal(serviceName) {
                     </div>
 
                     <div class="form-info">
-                        <i class="fas fa-info-circle"></i>
+                        <i class="fas fa-shield-alt"></i>
                         <div>
-                            <strong>Payment Instructions:</strong><br>
-                            Send payment to: <strong>0537922905</strong><br>
-                            Name: <strong>AKYE EMMANUEL KWESI</strong><br>
-                            WhatsApp: <strong>0537922905</strong><br><br>
-                            After payment, you will receive a confirmation SMS and data will be delivered within 5 minutes.
+                            <strong>Secure Payment Process:</strong><br>
+                            ✓ Pay securely with Paystack (Cards, Mobile Money, Bank Transfer)<br>
+                            ✓ Instant payment confirmation<br>
+                            ✓ Data delivered automatically within 5 minutes<br>
+                            ✓ SMS confirmation sent to your number
                         </div>
                     </div>
 
