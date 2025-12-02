@@ -659,20 +659,31 @@ function handleLogin(event) {
             let user = null;
             
             // Try Firebase first if available
-            if (window.firebaseDB && window.FirebaseDB) {
-                console.log('🔥 Using Firebase for login...');
-                const result = await window.FirebaseDB.getUser(email);
-                if (result.success && result.user && result.user.password === password) {
-                    user = result.user;
-                    console.log('✅ User authenticated via Firebase');
+            try {
+                if (window.firebaseDB && window.FirebaseDB) {
+                    console.log('🔥 Attempting Firebase login...');
+                    const result = await window.FirebaseDB.getUser(email);
+                    if (result.success && result.user && result.user.password === password) {
+                        user = result.user;
+                        console.log('✅ User authenticated via Firebase');
+                    }
+                } else {
+                    throw new Error('Firebase not initialized');
                 }
-            } else {
-                // Fallback to localStorage
-                console.log('💾 Firebase not available, using localStorage...');
+            } catch (firebaseError) {
+                console.warn('⚠️ Firebase login failed, trying localStorage:', firebaseError.message);
+            }
+            
+            // Fallback to localStorage if Firebase didn't work
+            if (!user) {
+                console.log('💾 Using localStorage for login...');
                 const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
                 user = users.find(u => 
                     (u.email === email || u.phone === email) && u.password === password
                 );
+                if (user) {
+                    console.log('✅ User authenticated via localStorage');
+                }
             }
             
             submitBtn.innerHTML = originalText;
