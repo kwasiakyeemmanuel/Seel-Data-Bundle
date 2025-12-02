@@ -1,10 +1,10 @@
 // Vercel Serverless Function: User Operations
 // Handles signup, login, profile management with Supabase
 
-import { getUserByEmail, createUser } from '../supabase-config.js';
-import bcrypt from 'bcryptjs';
+const { getUserByEmail, createUser } = require('../supabase-config.js');
+const bcrypt = require('bcryptjs');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     try {
         // Enable CORS and set Content-Type FIRST (before any other logic)
         res.setHeader('Access-Control-Allow-Origin', '*');

@@ -1,10 +1,10 @@
 // Supabase Configuration and Helper Functions
 // This file is used by backend API routes only
 
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
 // Initialize Supabase client (backend only - uses service role key)
-export function getSupabaseClient() {
+function getSupabaseClient() {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY; // Service role for backend
     
@@ -16,7 +16,7 @@ export function getSupabaseClient() {
 }
 
 // Initialize Supabase client for frontend (uses anon key)
-export function getSupabaseAnonClient() {
+function getSupabaseAnonClient() {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_ANON_KEY;
     
@@ -28,7 +28,7 @@ export function getSupabaseAnonClient() {
 }
 
 // Helper: Get user by email
-export async function getUserByEmail(email) {
+async function getUserByEmail(email) {
     try {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase
@@ -57,7 +57,7 @@ export async function getUserByEmail(email) {
 }
 
 // Helper: Create new user
-export async function createUser(userData) {
+async function createUser(userData) {
     try {
         const supabase = getSupabaseClient();
         
@@ -95,7 +95,7 @@ export async function createUser(userData) {
 }
 
 // Helper: Create order
-export async function createOrder(orderData) {
+async function createOrder(orderData) {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
         .from('orders')
@@ -116,8 +116,19 @@ export async function createOrder(orderData) {
     return data;
 }
 
+// Export all functions for CommonJS
+module.exports = {
+    getSupabaseClient,
+    getSupabaseAnonClient,
+    getUserByEmail,
+    createUser,
+    createOrder,
+    getUserOrders,
+    updateOrderStatus,
+    createTransaction
+};
 // Helper: Get user orders
-export async function getUserOrders(userId) {
+async function getUserOrders(userId) {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
         .from('orders')
@@ -130,7 +141,7 @@ export async function getUserOrders(userId) {
 }
 
 // Helper: Update order status
-export async function updateOrderStatus(orderId, status) {
+async function updateOrderStatus(orderId, status) {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
         .from('orders')

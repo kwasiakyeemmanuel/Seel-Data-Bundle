@@ -1,7 +1,6 @@
 {
   "name": "seel-data-bundle",
   "version": "1.0.0",
-  "type": "module",
   "description": "Seel Data Bundle - Data top-up service with secure backend",
   "main": "index.html",
   "scripts": {
