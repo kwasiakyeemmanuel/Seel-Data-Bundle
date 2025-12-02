@@ -116,11 +116,7 @@ function initializeMobileMenu() {
     // Close menu when overlay is clicked
     mobileOverlay.addEventListener('click', function() {
         console.log('📱 Overlay clicked - closing menu');
-        mobileNav.classList.remove('active');
-        mobileOverlay.classList.remove('active');
-        const icon = menuToggle.querySelector('i');
-        icon.classList.remove('fa-times');
-        icon.classList.add('fa-bars');
+        toggleMobileMenu();
     });
     
     // Close menu when nav link is clicked
@@ -128,16 +124,52 @@ function initializeMobileMenu() {
         link.addEventListener('click', function() {
             if (window.innerWidth <= 768) {
                 console.log('📱 Nav link clicked - closing menu');
-                mobileNav.classList.remove('active');
-                mobileOverlay.classList.remove('active');
-                const icon = menuToggle.querySelector('i');
-                icon.classList.remove('fa-times');
-                icon.classList.add('fa-bars');
+                toggleMobileMenu();
             }
         });
     });
     
     console.log('✅ Mobile menu initialized successfully');
+}
+
+// Standalone toggle function for inline onclick
+function toggleMobileMenu(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    console.log('🔥 Toggle function called directly!');
+    
+    const mobileNav = document.getElementById('mobileNav');
+    const mobileOverlay = document.getElementById('mobileOverlay');
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    
+    if (!mobileNav || !mobileOverlay || !menuToggle) {
+        console.error('❌ Elements not found in toggle function');
+        return;
+    }
+    
+    const icon = menuToggle.querySelector('i');
+    const isActive = mobileNav.classList.contains('active');
+    
+    console.log('Current state:', isActive ? 'OPEN' : 'CLOSED');
+    
+    if (isActive) {
+        // Close menu
+        mobileNav.classList.remove('active');
+        mobileOverlay.classList.remove('active');
+        icon.classList.remove('fa-times');
+        icon.classList.add('fa-bars');
+        console.log('✅ Menu CLOSED');
+    } else {
+        // Open menu
+        mobileNav.classList.add('active');
+        mobileOverlay.classList.add('active');
+        icon.classList.remove('fa-bars');
+        icon.classList.add('fa-times');
+        console.log('✅ Menu OPENED');
+    }
 }
 
 // Modal functionality
