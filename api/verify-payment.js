@@ -1,19 +1,26 @@
 // Vercel Serverless Function: Verify Payment with Paystack
 // This securely verifies payments server-side using secret key
 
+import { createOrder, createTransaction } from '../supabase-config.js';
+
 export default async function handler(req, res) {
     // Only allow POST requests
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Enable CORS for your domain
-    res.setHeader('Access-Control-Allow-Origin', 'https://seeldatabundle.me');
-    res.setHeader('Access-Control-Allow-Methods', 'POST');
+    // Enable CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    // Handle preflight
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
 
     try {
-        const { reference } = req.body;
+        const { reference, userId, orderData } = req.body;
 
         if (!reference) {
             return res.status(400).json({ error: 'Payment reference is required' });
@@ -31,17 +38,51 @@ export default async function handler(req, res) {
         const data = await response.json();
 
         if (data.status && data.data.status === 'success') {
+            // Payment verified! Save order to Supabase
+            let savedOrder = null;
+            let savedTransaction = null;
+            
+            if (userId && orderData) {
+                try {
+                    // Save order
+                    savedOrder = await createOrder({
+                        userId: userId,
+                        network: orderData.service || 'Unknown',
+                        dataType: orderData.bundleSize || orderData.bundle,
+                        beneficiaryNumber: orderData.phoneNumber,
+                        price: data.data.amount / 100,
+                        paymentReference: reference,
+                        status: 'completed'
+                    });
+                    
+                    // Save transaction
+                    savedTransaction = await createTransaction({
+                        orderId: savedOrder.id,
+                        userId: userId,
+                        paymentReference: reference,
+                        amount: data.data.amount / 100,
+                        status: 'success'
+                    });
+                } catch (dbError) {
+                    console.error('Database save error:', dbError);
+                }
+            }
+            
             return res.status(200).json({
                 success: true,
                 verified: true,
-                amount: data.data.amount / 100, // Convert from kobo to naira
+                amount: data.data.amount / 100,
                 customer: {
                     email: data.data.customer.email,
-                    phone: data.data.metadata?.phone || null
+                    phone: data.data.metadata?.phone_number || data.data.metadata?.phone || null
                 },
                 metadata: data.data.metadata,
                 paid_at: data.data.paid_at,
-                reference: data.data.reference
+                reference: data.data.reference,
+                order: savedOrder ? {
+                    id: savedOrder.id,
+                    status: savedOrder.status
+                } : null
             });
         } else {
             return res.status(400).json({

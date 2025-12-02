@@ -1929,7 +1929,7 @@ function handlePurchase(event) {
 }
 
 // Verify payment with backend
-function verifyPayment(reference, orderData) {
+async function verifyPayment(reference, orderData) {
     // Show verification message
     const verifyingModal = document.createElement('div');
     verifyingModal.className = 'modal';
@@ -1950,58 +1950,79 @@ function verifyPayment(reference, orderData) {
     // Get current user
     const currentUser = getCurrentUser() || {};
     
-    // Simulate payment verification
-    setTimeout(async () => {
+    try {
+        // Call backend API to verify payment and save order
+        const response = await fetch('/api/verify-payment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                reference: reference,
+                userId: currentUser.id,
+                orderData: orderData
+            })
+        });
+        
+        const result = await response.json();
+        
         verifyingModal.remove();
         
-        // Save order to localStorage
-        const order = {
-            id: 'ORD' + Date.now(),
-            service: orderData.service,
-            phoneNumber: orderData.phoneNumber,
-            bundle: orderData.bundleSize,
-            bundleSize: orderData.bundleSize,
-            amount: orderData.amount,
-            paymentMethod: orderData.paymentMethod,
-            paymentReference: reference,
-            status: 'Completed',
-            createdAt: new Date().toISOString()
-        };
-        
-        // Get existing orders for this user
-        const orderKey = 'userOrders_' + currentUser.email;
-        const orders = JSON.parse(localStorage.getItem(orderKey) || '[]');
-        orders.push(order);
-        localStorage.setItem(orderKey, JSON.stringify(orders));
-        
-        // Send admin notifications (Email + WhatsApp)
-        if (window.NotificationService) {
-            try {
-                const notificationData = {
-                    customerName: currentUser.name || 'N/A',
-                    customerEmail: orderData.email || currentUser.email,
-                    customerPhone: orderData.phoneNumber,
-                    service: orderData.service,
-                    bundleSize: orderData.bundleSize,
-                    amount: orderData.amount,
-                    reference: reference,
-                    timestamp: Date.now()
-                };
-                
-                console.log('📧 Sending admin notifications...');
-                await window.NotificationService.sendOrderNotification(notificationData);
-            } catch (error) {
-                console.error('❌ Notification error:', error);
+        if (result.success && result.verified) {
+            // Also save to localStorage for backward compatibility
+            const order = {
+                id: result.order?.id || ('ORD' + Date.now()),
+                service: orderData.service,
+                phoneNumber: orderData.phoneNumber,
+                bundle: orderData.bundleSize,
+                bundleSize: orderData.bundleSize,
+                amount: result.amount,
+                paymentMethod: orderData.paymentMethod,
+                paymentReference: reference,
+                status: 'Completed',
+                createdAt: new Date().toISOString()
+            };
+            
+            const orderKey = 'userOrders_' + currentUser.email;
+            const orders = JSON.parse(localStorage.getItem(orderKey) || '[]');
+            orders.push(order);
+            localStorage.setItem(orderKey, JSON.stringify(orders));
+            
+            // Send notifications
+            if (window.NotificationService) {
+                try {
+                    const notificationData = {
+                        customerName: currentUser.name || 'N/A',
+                        customerEmail: orderData.email || currentUser.email,
+                        customerPhone: orderData.phoneNumber,
+                        service: orderData.service,
+                        bundleSize: orderData.bundleSize,
+                        amount: result.amount,
+                        reference: reference,
+                        timestamp: Date.now()
+                    };
+                    
+                    console.log('📧 Sending admin notifications...');
+                    await window.NotificationService.sendOrderNotification(notificationData);
+                } catch (error) {
+                    console.error('❌ Notification error:', error);
+                }
             }
+            
+            // Send confirmation email
+            setTimeout(() => {
+                sendPurchaseConfirmationEmail(order);
+            }, 500);
+            
+            showSuccessModal(orderData, reference);
+        } else {
+            toast.error('Payment verification failed. Please contact support.');
         }
-        
-        // Send purchase confirmation email to customer
-        setTimeout(() => {
-            sendPurchaseConfirmationEmail(order);
-        }, 500);
-        
-        showSuccessModal(orderData, reference);
-    }, 2000);
+    } catch (error) {
+        console.error('Verification error:', error);
+        verifyingModal.remove();
+        toast.error('Error verifying payment. Please contact support with reference: ' + reference);
+    }
 }
 
 // Show success modal

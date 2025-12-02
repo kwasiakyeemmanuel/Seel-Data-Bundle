@@ -7,10 +7,15 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Enable CORS for your domain
-    res.setHeader('Access-Control-Allow-Origin', 'https://seeldatabundle.me');
-    res.setHeader('Access-Control-Allow-Methods', 'POST');
+    // Enable CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    // Handle preflight
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
 
     try {
         const { email, amount, metadata } = req.body;
