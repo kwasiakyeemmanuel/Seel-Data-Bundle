@@ -1206,15 +1206,28 @@ body {
 
     .user-menu {
         display: block !important;
+        position: absolute;
+        right: 70px;
+        top: 50%;
+        transform: translateY(-50%);
     }
 
     .user-menu-btn span {
-        display: none;
+        display: inline;
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .user-menu-btn {
         padding: 8px 12px;
         min-width: auto;
+        font-size: 14px;
+    }
+    
+    .user-menu-btn i:last-child {
+        display: none;
     }
 
     .help-btn {
