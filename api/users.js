@@ -5,10 +5,11 @@ import { getUserByEmail, createUser } from '../supabase-config.js';
 import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {
-    // Enable CORS
+    // Enable CORS and set Content-Type
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Content-Type', 'application/json');
 
     // Handle preflight
     if (req.method === 'OPTIONS') {

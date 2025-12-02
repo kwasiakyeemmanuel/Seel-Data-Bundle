@@ -4,10 +4,11 @@
 import { createOrder, getUserOrders, updateOrderStatus, createTransaction } from '../supabase-config.js';
 
 export default async function handler(req, res) {
-    // Enable CORS
+    // Enable CORS and set Content-Type
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Content-Type', 'application/json');
 
     // Handle preflight
     if (req.method === 'OPTIONS') {

@@ -730,6 +730,14 @@ function handleLogin(event) {
                 })
             });
             
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('❌ Non-JSON response:', text.substring(0, 200));
+                throw new Error('Server error: Invalid response format. Please try again.');
+            }
+            
             const result = await response.json();
             
             if (!response.ok || !result.success) {
@@ -1008,6 +1016,14 @@ function handleSignup(event) {
                     password: password
                 })
             });
+            
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('❌ Non-JSON response:', text.substring(0, 200));
+                throw new Error('Server error: Invalid response format. Please try again.');
+            }
             
             const result = await response.json();
             
@@ -1963,10 +1979,16 @@ async function verifyPayment(reference, orderData) {
                 orderData: orderData
             })
         });
-        
-        const result = await response.json();
-        
-        verifyingModal.remove();
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('❌ Non-JSON response:', text.substring(0, 200));
+            throw new Error('Server error: Invalid response format. Please try again.');
+        }
+
+        const result = await response.json();        verifyingModal.remove();
         
         if (result.success && result.verified) {
             // Also save to localStorage for backward compatibility
