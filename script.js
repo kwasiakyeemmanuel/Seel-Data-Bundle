@@ -878,9 +878,12 @@ function showSignupModal() {
                             id="signupPhone" 
                             name="phone" 
                             placeholder="0241234567" 
-                            pattern="0[0-9]{9}"
+                            pattern="[0-9]{10,15}"
+                            inputmode="numeric"
+                            autocomplete="tel"
                             required
                         >
+                        <small style="color: var(--dark-light); font-size: 12px;">Enter 10-digit phone number</small>
                     </div>
 
                     <div class="form-group">
@@ -953,20 +956,31 @@ function handleSignup(event) {
     const confirmPassword = formData.get('confirmPassword');
     
     // Get and sanitize inputs
-    const name = window.Security ? window.Security.sanitizeInput(formData.get('name')) : formData.get('name');
-    const email = window.Security ? window.Security.sanitizeInput(formData.get('email')) : formData.get('email');
-    const phone = window.Security ? window.Security.sanitizeInput(formData.get('phone')) : formData.get('phone');
+    const name = window.Security ? window.Security.sanitizeInput(formData.get('name')) : formData.get('name').trim();
+    const email = window.Security ? window.Security.sanitizeInput(formData.get('email')) : formData.get('email').trim();
+    const phone = window.Security ? window.Security.sanitizeInput(formData.get('phone')) : formData.get('phone').trim();
     
-    // Validate email and phone with security module
-    if (window.Security) {
-        if (!window.Security.isValidEmail(email)) {
-            toast.error('Please enter a valid email address');
-            return;
-        }
-        if (!window.Security.isValidPhone(phone)) {
-            toast.error('Please enter a valid phone number (10 digits)');
-            return;
-        }
+    // Basic validation for empty fields
+    if (!name || !email || !phone || !password) {
+        toast.error('All fields are required');
+        return;
+    }
+    
+    // Validate email format with fallback
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const isEmailValid = window.Security ? window.Security.isValidEmail(email) : emailRegex.test(email);
+    if (!isEmailValid) {
+        toast.error('Please enter a valid email address');
+        return;
+    }
+    
+    // Validate phone with fallback
+    const phoneRegex = /^[0-9]{10,15}$/;
+    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+    const isPhoneValid = window.Security ? window.Security.isValidPhone(phone) : phoneRegex.test(cleanPhone);
+    if (!isPhoneValid) {
+        toast.error('Please enter a valid phone number (10 digits)');
+        return;
     }
     
     // Validate password strength
@@ -984,7 +998,7 @@ function handleSignup(event) {
     const userData = {
         name: name,
         email: email,
-        phone: phone,
+        phone: cleanPhone, // Use cleaned phone number
         password: password,
         createdAt: new Date().toISOString()
     };
@@ -994,15 +1008,30 @@ function handleSignup(event) {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
     submitBtn.disabled = true;
     
+    // Check network connectivity (especially important for mobile)
+    if (!navigator.onLine) {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        toast.error('No internet connection. Please check your network and try again.');
+        return;
+    }
+    
     // Create account via backend API
     setTimeout(async () => {
         console.log('🔐 SIGNUP: Creating account via backend...');
         console.log('📧 Email:', userData.email);
         console.log('📱 Phone:', userData.phone);
         console.log('👤 Name:', userData.name);
+        console.log('📱 Device:', /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop');
         
         try {
-            // Call backend signup API
+            // Call backend signup API with timeout for mobile networks
+            console.log('📡 Sending request to /api/users...');
+            
+            // Create abort controller for timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            
             const response = await fetch('/api/users', {
                 method: 'POST',
                 headers: {
@@ -1014,24 +1043,33 @@ function handleSignup(event) {
                     fullName: userData.name,
                     phone: userData.phone,
                     password: password
-                })
+                }),
+                signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
+            
+            console.log('📥 Response status:', response.status);
+            console.log('📥 Response ok:', response.ok);
             
             // Check if response is JSON
             const contentType = response.headers.get('content-type');
+            console.log('📥 Content-Type:', contentType);
+            
             if (!contentType || !contentType.includes('application/json')) {
                 const text = await response.text();
-                console.error('❌ Non-JSON response:', text.substring(0, 200));
-                throw new Error('Server error: Invalid response format. Please try again.');
+                console.error('❌ Non-JSON response received:', text.substring(0, 300));
+                throw new Error('Server error: Invalid response format. Please check your internet connection and try again.');
             }
             
             const result = await response.json();
+            console.log('📥 Response data:', result);
             
             if (!response.ok || !result.success) {
                 if (response.status === 409) {
                     throw new Error('Account already exists with this email or phone');
                 }
-                throw new Error(result.error || 'Signup failed');
+                throw new Error(result.error || 'Signup failed. Please try again.');
             }
             
             console.log('✅ Account created successfully!');
@@ -1040,10 +1078,10 @@ function handleSignup(event) {
             // Store user session in localStorage
             const sessionUser = {
                 id: newUser.id,
-                name: newUser.fullName,
+                name: newUser.fullName || newUser.full_name,
                 email: newUser.email,
                 phone: newUser.phone,
-                createdAt: newUser.createdAt
+                createdAt: newUser.createdAt || newUser.created_at
             };
             localStorage.setItem('currentUser', JSON.stringify(sessionUser));
             
@@ -1052,7 +1090,15 @@ function handleSignup(event) {
             console.error('❌ Signup error:', error);
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
-            toast.error(error.message || 'Failed to create account. Please try again.');
+            
+            // Handle specific error types
+            if (error.name === 'AbortError') {
+                toast.error('Request timeout. Please check your internet connection and try again.', 5000);
+            } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                toast.error('Network error. Please check your internet connection and try again.', 5000);
+            } else {
+                toast.error(error.message || 'Failed to create account. Please try again.', 5000);
+            }
             return;
         }
         

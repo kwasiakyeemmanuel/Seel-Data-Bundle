@@ -2342,3 +2342,87 @@ body {
     transform: scale(1.2);
     color: #FFD700;
 }
+
+/* Mobile-Specific Fixes for Forms and Modals */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        max-height: 95vh;
+        margin: 2.5vh auto;
+    }
+    
+    .modal-body {
+        padding: 20px 15px;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .modal-header {
+        padding: 20px 15px;
+    }
+    
+    .modal-header h2 {
+        font-size: 20px;
+    }
+    
+    /* Prevent zoom on input focus for iOS */
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="password"],
+    input[type="number"],
+    select,
+    textarea {
+        font-size: 16px !important;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+    
+    /* Better touch targets for mobile */
+    button,
+    .btn,
+    .close-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Form groups spacing */
+    .form-group {
+        margin-bottom: 16px;
+    }
+    
+    /* Fix for position:fixed elements on mobile */
+    .modal {
+        position: fixed;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        width: 98%;
+        border-radius: 12px;
+    }
+    
+    .modal-body {
+        padding: 15px 10px;
+    }
+    
+    .form-group input,
+    .form-group select {
+        padding: 12px 15px;
+        font-size: 16px;
+    }
+}
+
+/* Fix Safari iOS input zoom */
+@supports (-webkit-touch-callout: none) {
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="password"],
+    input[type="number"] {
+        font-size: 16px !important;
+    }
+}
