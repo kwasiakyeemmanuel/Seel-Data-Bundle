@@ -1588,8 +1588,14 @@ function initializeSmoothScroll() {
     
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
-            e.preventDefault();
             const targetId = this.getAttribute('href');
+            
+            // Skip if it's just '#' or has onclick handler
+            if (!targetId || targetId === '#' || targetId.length <= 1) {
+                return;
+            }
+            
+            e.preventDefault();
             const targetSection = document.querySelector(targetId);
             
             if (targetSection) {
