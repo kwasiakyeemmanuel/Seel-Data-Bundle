@@ -643,7 +643,7 @@ function handleLogin(event) {
     const password = formData.get('password');
     
     // Apply rate limiting if available
-    if (window.Security && !window.Security.rateLimiter('login', email)) {
+    if (window.Security && window.Security.rateLimiter && !window.Security.rateLimiter.checkLimit('login-' + email)) {
         toast.error('Too many login attempts. Please try again in 5 minutes.');
         return;
     }
