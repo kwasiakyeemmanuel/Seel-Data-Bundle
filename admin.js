@@ -150,53 +150,64 @@ function loadDashboardData() {
 
 // Load overview data
 function loadOverviewData() {
+    logOverviewStart();
+    // Delegate to the appropriate loader in a single expression to reduce cyclomatic complexity
+    (window.firebaseDB && window.FirebaseDB ? loadOverviewFromFirebase : fetchOverviewFromLocal)();
+}
+
+function logOverviewStart() {
     console.log('📊 Loading overview data...');
-    
-    // Use Firebase if available
-    if (window.firebaseDB && window.FirebaseDB) {
-        console.log('🔥 Fetching data from Firebase...');
-        Promise.all([
-            window.FirebaseDB.getAllUsers(),
-            window.FirebaseDB.getAllOrders(),
-            window.FirebaseDB.getAllReviews()
-        ]).then(([usersResult, ordersResult, reviewsResult]) => {
-            const users = usersResult.users || [];
-            const allOrders = ordersResult.orders || [];
-            const allReviews = reviewsResult.reviews || [];
-            
-            console.log('📊 Firebase data - Users:', users.length, 'Orders:', allOrders.length, 'Reviews:', allReviews.length);
-            
-            displayOverviewStats(users, allOrders, allReviews);
-        }).catch(error => {
-            console.error('❌ Error loading Firebase data:', error);
-            toast.error('Error loading dashboard data');
-        });
-    } else {
-        console.log('💾 Firebase not available, using localStorage...');
-        // Force fresh read from localStorage
-        const usersJson = localStorage.getItem('seelDataUsers');
-        console.log('📦 Raw localStorage data for seelDataUsers:', usersJson);
-        
-        const users = JSON.parse(usersJson || '[]');
-        const allReviews = JSON.parse(localStorage.getItem('customerReviews') || '[]');
-        
-        console.log('📊 Loading overview - Users found:', users.length);
-        console.log('👥 User details:', users.map(u => ({ name: u.name, email: u.email })));
-        console.log('🌐 Current domain:', window.location.hostname);
-        console.log('🔗 Current URL:', window.location.href);
-        
-        // Calculate total orders and revenue
-        let totalOrders = 0;
-        let allOrders = [];
-        
-        users.forEach(user => {
-            const userOrders = JSON.parse(localStorage.getItem('userOrders_' + user.email) || '[]');
-            totalOrders += userOrders.length;
-            allOrders = allOrders.concat(userOrders);
-        });
-        
+}
+
+// Separate Firebase loading to keep single responsibility and lower complexity
+async function loadOverviewFromFirebase() {
+    try {
+        const { users, allOrders, allReviews } = await fetchOverviewFromFirebase();
         displayOverviewStats(users, allOrders, allReviews);
+    } catch (error) {
+        console.error('❌ Error loading Firebase data:', error);
+        if (typeof toast !== 'undefined' && toast.error) toast.error('Error loading dashboard data');
     }
+}
+
+async function fetchOverviewFromFirebase() {
+    console.log('🔥 Fetching data from Firebase...');
+    const [usersResult, ordersResult, reviewsResult] = await Promise.all([
+        window.FirebaseDB.getAllUsers(),
+        window.FirebaseDB.getAllOrders(),
+        window.FirebaseDB.getAllReviews()
+    ]);
+    const users = usersResult.users || [];
+    const allOrders = ordersResult.orders || [];
+    const allReviews = reviewsResult.reviews || [];
+    
+    console.log('📊 Firebase data - Users:', users.length, 'Orders:', allOrders.length, 'Reviews:', allReviews.length);
+    return { users, allOrders, allReviews };
+}
+
+function fetchOverviewFromLocal() {
+    console.log('💾 Firebase not available, using localStorage...');
+    // Force fresh read from localStorage
+    const usersJson = localStorage.getItem('seelDataUsers');
+    console.log('📦 Raw localStorage data for seelDataUsers:', usersJson);
+    
+    const users = JSON.parse(usersJson || '[]');
+    const allReviews = JSON.parse(localStorage.getItem('customerReviews') || '[]');
+    
+    console.log('📊 Loading overview - Users found:', users.length);
+    console.log('👥 User details:', users.map(u => ({ name: u.name, email: u.email })));
+    console.log('🌐 Current domain:', window.location.hostname);
+    console.log('🔗 Current URL:', window.location.href);
+    
+    // Calculate total orders and aggregate user orders
+    let allOrders = [];
+    
+    users.forEach(user => {
+        const userOrders = JSON.parse(localStorage.getItem('userOrders_' + user.email) || '[]');
+        allOrders = allOrders.concat(userOrders);
+    });
+    
+    displayOverviewStats(users, allOrders, allReviews);
 }
 
 function displayOverviewStats(users, allOrders, allReviews) {
