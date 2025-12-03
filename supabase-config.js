@@ -155,7 +155,7 @@ async function updateOrderStatus(orderId, status) {
 }
 
 // Helper: Create transaction record
-export async function createTransaction(transactionData) {
+async function createTransaction(transactionData) {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
         .from('transactions')
@@ -174,3 +174,45 @@ export async function createTransaction(transactionData) {
     if (error) throw error;
     return data;
 }
+
+// Helper: Create contact message
+async function createContact(contactData) {
+    try {
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase
+            .from('contact_messages')
+            .insert([{
+                name: contactData.name,
+                email: contactData.email,
+                phone: contactData.phone,
+                subject: contactData.subject,
+                message: contactData.message,
+                created_at: new Date().toISOString()
+            }])
+            .select()
+            .single();
+        
+        if (error) {
+            console.error('Supabase error creating contact:', error);
+            throw error;
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('createContact function error:', error);
+        throw error;
+    }
+}
+
+module.exports = {
+    getSupabaseClient,
+    getSupabaseAnonClient,
+    getUserByEmail,
+    createUser,
+    createOrder,
+    getUserOrders,
+    updateOrderStatus,
+    createTransaction,
+    createContact
+};
+

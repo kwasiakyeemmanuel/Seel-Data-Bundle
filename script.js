@@ -362,8 +362,8 @@ function handleContactForm(event) {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
     submitBtn.disabled = true;
     
-    // Send to backend
-    fetch('contact-submit.php', {
+    // Send to backend API
+    fetch('/api/contact', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
