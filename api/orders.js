@@ -1,9 +1,9 @@
 // Vercel Serverless Function: Order Operations
 // Handles creating orders and fetching order history
 
-import { createOrder, getUserOrders, updateOrderStatus, createTransaction } from '../supabase-config.js';
+const { createOrder, getUserOrders, updateOrderStatus, createTransaction } = require('../supabase-config.js');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // Enable CORS and set Content-Type
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');

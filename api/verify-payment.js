@@ -1,9 +1,9 @@
 // Vercel Serverless Function: Verify Payment with Paystack
 // This securely verifies payments server-side using secret key
 
-import { createOrder, createTransaction } from '../supabase-config.js';
+const { createOrder, createTransaction } = require('../supabase-config.js');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // Enable CORS and set Content-Type
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
