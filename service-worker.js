@@ -34,8 +34,10 @@ self.addEventListener('fetch', event => {
 
         return fetch(event.request).then(
           response => {
-            // Check if valid response
-            if(!response || response.status !== 200 || response.type !== 'basic') {
+            // Check if valid response (split complex conditional)
+            const isInvalidResponse = !response || response.status !== 200 || response.type !== 'basic';
+            
+            if (isInvalidResponse) {
               return response;
             }
 

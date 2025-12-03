@@ -77,17 +77,8 @@
             return sqlPatterns.some(pattern => pattern.test(input));
         },
         
-        // Validate input before submission
-        validateInput(input, type = 'text') {
-            if (!input || typeof input !== 'string') return false;
-            
-            // Check for SQL injection
-            if (this.detectSQLInjection(input)) {
-                console.error('⚠️ Potential SQL injection detected');
-                return false;
-            }
-            
-            // Check for XSS patterns
+        // Check for XSS patterns
+        detectXSS(input) {
             const xssPatterns = [
                 /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
                 /javascript:/gi,
@@ -97,12 +88,11 @@
                 /<embed/gi
             ];
             
-            if (xssPatterns.some(pattern => pattern.test(input))) {
-                console.error('⚠️ Potential XSS attack detected');
-                return false;
-            }
-            
-            // Type-specific validation
+            return xssPatterns.some(pattern => pattern.test(input));
+        },
+        
+        // Validate by type
+        validateByType(input, type) {
             switch(type) {
                 case 'email':
                     return this.validateEmail(input);
@@ -113,6 +103,29 @@
                 default:
                     return true;
             }
+        },
+        
+        // Validate input before submission (refactored for simplicity)
+        validateInput(input, type = 'text') {
+            if (!input || typeof input !== 'string') {
+                return false;
+            }
+            
+            // Check for SQL injection
+            if (this.detectSQLInjection(input)) {
+                console.error('⚠️ Potential SQL injection detected');
+                return false;
+            }
+            
+            // Check for XSS patterns
+            // Check for XSS patterns
+            if (this.detectXSS(input)) {
+                console.error('⚠️ Potential XSS attack detected');
+                return false;
+            }
+            
+            // Type-specific validation
+            return this.validateByType(input, type);
         },
         
         // Rate limiting for form submissions

@@ -268,66 +268,87 @@ function displayOverviewStats(users, allOrders, allReviews) {
 }
 
 // Load users data
-function loadUsersData() {
-    console.log('👥 Loading users data...');
-    console.log('🌐 Current domain:', window.location.hostname);
-    
-    // Add domain warning banner
-    const domainWarning = `
+// Helper: Get domain warning banner HTML
+function getDomainWarningBanner() {
+    const dataSource = window.firebaseDB ? 'Firebase (Centralized Database)' : 'localStorage (Browser Only)';
+    return `
         <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-            <strong>⚠️ Data Source:</strong> ${window.firebaseDB ? 'Firebase (Centralized Database)' : 'localStorage (Browser Only)'}<br>
+            <strong>⚠️ Data Source:</strong> ${dataSource}<br>
             <small style="color: #856404;">Current domain: <strong>${window.location.hostname}</strong></small><br>
             <button class="btn btn-primary" onclick="loadUsersData()" style="margin-top: 10px;">
                 <i class="fas fa-sync"></i> Refresh Users
             </button>
         </div>
     `;
+}
+
+// Helper: Show empty state message
+function showEmptyUsersState(domainWarning, message) {
+    document.getElementById('usersTable').innerHTML = domainWarning + `
+        <div class="empty-state">
+            <i class="fas fa-users"></i>
+            <p>${message}</p>
+        </div>`;
+}
+
+// Helper: Show error state
+function showUsersErrorState(domainWarning, error) {
+    document.getElementById('usersTable').innerHTML = domainWarning + `
+        <div class="empty-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Error loading users</p>
+            <small>${error.message}</small>
+        </div>`;
+}
+
+// Load users data (refactored for better maintainability)
+function loadUsersData() {
+    console.log('👥 Loading users data...');
+    console.log('🌐 Current domain:', window.location.hostname);
+    
+    const domainWarning = getDomainWarningBanner();
     
     // Use Firebase if available, otherwise fallback to localStorage
     if (window.firebaseDB && window.FirebaseDB) {
-        console.log('🔥 Fetching users from Firebase...');
-        window.FirebaseDB.getAllUsers().then(result => {
+        loadUsersFromFirebase(domainWarning);
+    } else {
+        loadUsersFromLocalStorage(domainWarning);
+    }
+}
+
+// Load users from Firebase
+function loadUsersFromFirebase(domainWarning) {
+    console.log('🔥 Fetching users from Firebase...');
+    window.FirebaseDB.getAllUsers()
+        .then(result => {
             const users = result.users || [];
             console.log('👥 Firebase users found:', users.length);
             
             if (users.length === 0) {
-                document.getElementById('usersTable').innerHTML = domainWarning + `
-                    <div class="empty-state">
-                        <i class="fas fa-users"></i>
-                        <p>No users registered yet in Firebase</p>
-                    </div>`;
+                showEmptyUsersState(domainWarning, 'No users registered yet in Firebase');
                 return;
             }
             
             displayUsersTable(users, domainWarning);
-        }).catch(error => {
+        })
+        .catch(error => {
             console.error('❌ Error loading users from Firebase:', error);
-            document.getElementById('usersTable').innerHTML = domainWarning + `
-                <div class="empty-state">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <p>Error loading users from Firebase</p>
-                    <small>${error.message}</small>
-                </div>`;
+            showUsersErrorState(domainWarning, error);
         });
-    } else {
-        console.log('💾 Firebase not available, using localStorage...');
-        const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
-        console.log('👥 localStorage users found:', users.length);
-        
-        if (users.length === 0) {
-            document.getElementById('usersTable').innerHTML = domainWarning + `
-                <div class="empty-state">
-                    <i class="fas fa-users"></i>
-                    <p>No users registered yet on <strong>${window.location.hostname}</strong></p>
-                    <small style="color: #999; margin-top: 10px; display: block;">
-                        Users must sign up on <strong>${window.location.hostname}</strong> to appear here.
-                    </small>
-                </div>`;
-            return;
-        }
-        
-        displayUsersTable(users, domainWarning);
+}
+
+// Load users from localStorage
+function loadUsersFromLocalStorage(domainWarning) {
+    console.log('💾 Using localStorage...');
+    const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
+    console.log('👥 localStorage users found:', users.length);
+    
+    if (users.length === 0) {
+        showEmptyUsersState(domainWarning, `No users registered yet on <strong>${window.location.hostname}</strong>`);
+        return;
     }
+    
+    displayUsersTable(users, domainWarning);
 }
 
 function displayUsersTable(users, domainWarning) {
