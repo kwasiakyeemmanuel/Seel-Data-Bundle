@@ -1260,7 +1260,7 @@ body {
     }
 
     .hero {
-        padding: 50px 0;
+        padding: 35px 0 30px;
     }
 
     .hero-title {
@@ -1281,19 +1281,19 @@ body {
     }
 
     .section-header h2 {
-        font-size: 28px;
+        font-size: 26px;
     }
 
     .section-header p {
-        font-size: 16px;
+        font-size: 15px;
     }
 
     .services {
-        padding: 50px 0;
+        padding: 35px 0 30px;
     }
 
     .filters {
-        padding: 20px;
+        padding: 15px;
     }
 
     .filter-content {
@@ -1302,36 +1302,36 @@ body {
 
     .service-grid {
         grid-template-columns: 1fr;
-        gap: 20px;
+        gap: 15px;
     }
 
     .service-card {
-        padding: 24px;
+        padding: 20px;
     }
 
     .features {
-        padding: 50px 0;
+        padding: 35px 0 30px;
     }
 
     .features-grid {
         grid-template-columns: 1fr;
-        gap: 30px;
-    }
-
-    .about {
-        padding: 50px 0;
-    }
-
-    .about-content {
-        gap: 30px;
-    }
-
-    .about-text {
         gap: 20px;
     }
 
+    .about {
+        padding: 35px 0 30px;
+    }
+
+    .about-content {
+        gap: 20px;
+    }
+
+    .about-text {
+        gap: 15px;
+    }
+
     .about-card {
-        padding: 25px 20px;
+        padding: 20px 18px;
     }
 
     .about-card h3 {
@@ -1384,25 +1384,25 @@ body {
     }
 
     .contact {
-        padding: 50px 0;
+        padding: 35px 0 30px;
     }
 
     .contact-content {
         grid-template-columns: 1fr;
-        gap: 30px;
+        gap: 20px;
     }
 
     .contact-form-wrapper {
-        padding: 30px 20px;
+        padding: 25px 18px;
     }
 
     .footer {
-        padding: 40px 0 20px;
+        padding: 30px 0 15px;
     }
 
     .footer-content {
         grid-template-columns: 1fr;
-        gap: 30px;
+        gap: 20px;
     }
 }
 
@@ -1462,11 +1462,21 @@ body {
     }
 
     .hero-title {
-        font-size: 28px;
+        font-size: 26px;
+        line-height: 1.2;
     }
 
     .hero-subtitle {
-        font-size: 15px;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    
+    .section-header h2 {
+        font-size: 24px;
+    }
+    
+    .section-header p {
+        font-size: 14px;
     }
     
     /* Ensure user name is visible on small mobile screens */
