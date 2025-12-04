@@ -3,6 +3,10 @@
 .env.local
 .env.production
 
+# Firebase
+firebase-config.js
+firebase-db.js
+
 # Vercel
 .vercel
 
