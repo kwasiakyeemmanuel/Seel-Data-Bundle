@@ -1428,6 +1428,14 @@ body {
         grid-template-columns: 1fr;
         gap: 20px;
     }
+
+    .footer-section:nth-child(2) {
+        order: 3;
+    }
+
+    .footer-section:nth-child(3) {
+        order: 2;
+    }
 }
 
 @media (max-width: 480px) {
