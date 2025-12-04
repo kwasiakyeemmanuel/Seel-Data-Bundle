@@ -59,7 +59,8 @@ async function handleAdminLogin(event) {
         } else {
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
-            alert('Invalid credentials! Please try again.');
+            console.error('Login failed:', result);
+            alert('Invalid credentials! ' + (result.error || '') + (result.debug ? '\nDebug: ' + result.debug : ''));
         }
     } catch (error) {
         console.error('Login error:', error);
