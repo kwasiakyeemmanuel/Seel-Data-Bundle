@@ -58,10 +58,20 @@ module.exports = async function handler(req, res) {
                     .eq('username', username)
                     .single();
                 
-                if (adminError || !admin) {
+                // Log error for debugging
+                if (adminError) {
+                    console.error('Supabase error:', adminError);
                     return res.status(401).json({
                         success: false,
-                        error: 'Invalid credentials'
+                        error: 'Invalid credentials',
+                        debug: adminError.message
+                    });
+                }
+                
+                if (!admin) {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Invalid credentials - user not found'
                     });
                 }
                 
@@ -71,7 +81,7 @@ module.exports = async function handler(req, res) {
                 if (!isValidPassword) {
                     return res.status(401).json({
                         success: false,
-                        error: 'Invalid credentials'
+                        error: 'Invalid credentials - wrong password'
                     });
                 }
                 
