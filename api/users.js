@@ -153,60 +153,65 @@ async function handleProfile(req, res) {
 }
 
 // === MAIN HANDLER ===
+function setCorsHeaders(res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Content-Type', 'application/json');
+}
+
+async function routeAction(action, req, res) {
+    switch (action) {
+        case 'signup':
+            return await handleSignup(req, res);
+        case 'login':
+            return await handleLogin(req, res);
+        case 'profile':
+            return await handleProfile(req, res);
+        default:
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid action'
+            });
+    }
+}
+
 module.exports = async function handler(req, res) {
     try {
         // Enable CORS and set Content-Type FIRST
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-        res.setHeader('Content-Type', 'application/json');
+        setCorsHeaders(res);
 
-        // Handle preflight
+        // Handle preflight quickly
         if (req.method === 'OPTIONS') {
             return res.status(200).end();
         }
 
-        // Only allow POST requests
+        // Basic method and body validation
         if (req.method !== 'POST') {
-            return res.status(405).json({ 
+            return res.status(405).json({
                 success: false,
-                error: 'Method not allowed. Use POST.' 
+                error: 'Method not allowed. Use POST.'
             });
         }
 
-        // Validate request body exists
         if (!req.body) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Request body is required' 
+            return res.status(400).json({
+                success: false,
+                error: 'Request body is required'
             });
         }
 
         const { action } = req.body;
-
-        // Validate action exists
         if (!action) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Action parameter is required' 
+            return res.status(400).json({
+                success: false,
+                error: 'Action parameter is required'
             });
         }
 
-        // Route to appropriate handler
-        switch (action) {
-            case 'signup':
-                return await handleSignup(req, res);
-            case 'login':
-                return await handleLogin(req, res);
-            case 'profile':
-                return await handleProfile(req, res);
-            default:
-                return res.status(400).json({ 
-                    success: false, 
-                    error: 'Invalid action' 
-                });
-        }
-        
+        // Delegate to action router
+        return await routeAction(action, req, res);
+
     } catch (outerError) {
         console.error('User API error (critical):', outerError);
         try {
