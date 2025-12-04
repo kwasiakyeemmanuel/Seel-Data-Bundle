@@ -1429,12 +1429,15 @@ body {
         gap: 20px;
     }
 
-    .footer-section:nth-child(2) {
-        order: 3;
+    .footer-section:nth-child(2),
+    .footer-section:nth-child(3) {
+        display: inline-block;
+        width: 48%;
+        vertical-align: top;
     }
 
-    .footer-section:nth-child(3) {
-        order: 2;
+    .footer-section:nth-child(2) {
+        margin-right: 4%;
     }
 }
 
