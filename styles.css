@@ -847,7 +847,7 @@ body {
 .contact-card {
     background: var(--light-bg);
     padding: 24px;
-    border-radius: 16px;
+    border-radius: 17px;
     transition: all 0.3s ease;
 }
 
