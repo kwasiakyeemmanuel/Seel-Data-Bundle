@@ -84,6 +84,9 @@
                     <a href="#" class="admin-nav-link" onclick="showAdminSection('orders')">
                         <i class="fas fa-shopping-cart"></i> Orders
                     </a>
+                    <a href="#" class="admin-nav-link" onclick="showAdminSection('contacts')">
+                        <i class="fas fa-envelope"></i> Contact Messages
+                    </a>
                     <a href="#" class="admin-nav-link" onclick="showAdminSection('reviews')">
                         <i class="fas fa-star"></i> Reviews
                     </a>
@@ -184,6 +187,18 @@
                         </div>
                     </div>
                     <div id="ordersTable"></div>
+                </section>
+
+                <!-- Contact Messages Section -->
+                <section id="contacts-section" class="admin-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-envelope"></i> Contact Messages</h2>
+                        <div class="search-box">
+                            <input type="text" placeholder="Search messages..." onkeyup="filterContacts(this.value)">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    <div id="contactsTable"></div>
                 </section>
 
                 <!-- Reviews Section -->

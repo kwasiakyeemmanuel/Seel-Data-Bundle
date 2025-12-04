@@ -31,24 +31,27 @@ async function handleAdminLogin(event) {
     submitBtn.disabled = true;
     
     try {
-        // Call backend API for authentication
-        const response = await fetch(`${API_URL}/admin-login`, {
+        // Call backend API for authentication using new admin endpoint
+        const response = await fetch(`${API_URL}/admin`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ 
+                action: 'login',
+                username, 
+                password 
+            })
         });
         
         const result = await response.json();
         
         if (result.success) {
-            // Create admin session with token from server
+            // Create admin session
             localStorage.setItem('adminSession', JSON.stringify({
                 loggedIn: true,
                 timestamp: Date.now(),
-                username: username,
-                token: result.token
+                username: username
             }));
             
             showAdminDashboard();
@@ -113,6 +116,9 @@ function showAdminSection(section) {
         case 'orders':
             loadOrdersData();
             break;
+        case 'contacts':
+            loadContactsData();
+            break;
         case 'reviews':
             loadReviewsData();
             break;
@@ -149,10 +155,76 @@ function loadDashboardData() {
 }
 
 // Load overview data
-function loadOverviewData() {
-    logOverviewStart();
-    // Delegate to the appropriate loader in a single expression to reduce cyclomatic complexity
-    (window.firebaseDB && window.FirebaseDB ? loadOverviewFromFirebase : fetchOverviewFromLocal)();
+async function loadOverviewData() {
+    console.log('📊 Loading overview data...');
+    
+    try {
+        // Fetch dashboard stats from Supabase via admin API
+        const response = await fetch(`${API_URL}/admin?action=getDashboardStats`);
+        const result = await response.json();
+        
+        if (!result.success) {
+            console.error('❌ Error loading dashboard stats:', result.error);
+            // Fallback to localStorage if API fails
+            fetchOverviewFromLocal();
+            return;
+        }
+        
+        const stats = result.data;
+        
+        // Update stats with animation
+        const userCountElement = document.getElementById('totalUsers');
+        userCountElement.textContent = stats.totalUsers;
+        userCountElement.style.animation = 'pulse 0.5s';
+        setTimeout(() => userCountElement.style.animation = '', 500);
+        
+        document.getElementById('totalOrders').textContent = stats.totalOrders;
+        document.getElementById('totalRevenue').textContent = 'GH₵' + stats.totalRevenue.toFixed(2);
+        document.getElementById('totalReviews').textContent = stats.pendingOrders; // Reusing for pending orders
+        
+        // Recent orders
+        const recentOrders = stats.recentOrders || [];
+        const recentOrdersHTML = recentOrders.length > 0 ? recentOrders.map(order => `
+            <div class="order-item">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <strong>${order.network || 'N/A'}</strong>
+                    <span class="status-badge status-${order.status.toLowerCase()}">${order.status}</span>
+                </div>
+                <div style="font-size: 14px; color: #666;">
+                    ${order.data_type} • ${order.beneficiary_number}
+                </div>
+                <div style="font-size: 12px; color: #999; margin-top: 5px;">
+                    GH₵${order.price} • ${new Date(order.created_at).toLocaleString()}
+                </div>
+            </div>
+        `).join('') : '<div class="empty-state"><i class="fas fa-inbox"></i><p>No orders yet</p></div>';
+        
+        document.getElementById('recentOrdersList').innerHTML = recentOrdersHTML;
+        
+        // Popular networks
+        const networkCounts = {};
+        recentOrders.forEach(order => {
+            const network = order.network || 'Unknown';
+            networkCounts[network] = (networkCounts[network] || 0) + 1;
+        });
+        
+        const popularNetworksHTML = Object.entries(networkCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([network, count]) => `
+                <div class="network-bar">
+                    <span class="network-name">${network}</span>
+                    <span class="network-count">${count} orders</span>
+                </div>
+            `).join('') || '<div class="empty-state"><i class="fas fa-chart-bar"></i><p>No data yet</p></div>';
+        
+        document.getElementById('popularNetworks').innerHTML = popularNetworksHTML;
+        
+    } catch (error) {
+        console.error('❌ Error loading overview:', error);
+        // Fallback to localStorage
+        fetchOverviewFromLocal();
+    }
 }
 
 function logOverviewStart() {
@@ -302,17 +374,79 @@ function showUsersErrorState(domainWarning, error) {
 }
 
 // Load users data (refactored for better maintainability)
-function loadUsersData() {
-    console.log('👥 Loading users data...');
-    console.log('🌐 Current domain:', window.location.hostname);
+async function loadUsersData() {
+    console.log('👥 Loading users data from Supabase...');
     
-    const domainWarning = getDomainWarningBanner();
-    
-    // Use Firebase if available, otherwise fallback to localStorage
-    if (window.firebaseDB && window.FirebaseDB) {
-        loadUsersFromFirebase(domainWarning);
-    } else {
-        loadUsersFromLocalStorage(domainWarning);
+    try {
+        // Fetch users from Supabase via admin API
+        const response = await fetch(`${API_URL}/admin?action=getAllUsers`);
+        const result = await response.json();
+        
+        if (!result.success) {
+            console.error('❌ Error loading users:', result.error);
+            document.getElementById('usersTable').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Error loading users from Supabase</p>
+                    <small>${result.error}</small>
+                </div>`;
+            return;
+        }
+        
+        const users = result.data;
+        console.log('👥 Supabase users found:', users.length);
+        
+        if (users.length === 0) {
+            document.getElementById('usersTable').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <p>No users registered yet</p>
+                </div>`;
+            return;
+        }
+        
+        // Display users in table
+        const tableHTML = `
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Registered</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                            <tr>
+                                <td><strong>${user.full_name || 'N/A'}</strong></td>
+                                <td>${user.email}</td>
+                                <td>${user.phone || 'N/A'}</td>
+                                <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                                <td>
+                                    <button class="action-btn action-btn-view" onclick="viewUserDetails('${user.email}')">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        document.getElementById('usersTable').innerHTML = tableHTML;
+        
+    } catch (error) {
+        console.error('❌ Error loading users:', error);
+        document.getElementById('usersTable').innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Error loading users</p>
+                <small>${error.message}</small>
+            </div>`;
     }
 }
 
@@ -391,62 +525,120 @@ function displayUsersTable(users, domainWarning) {
 }
 
 // Load orders data
-function loadOrdersData() {
-    const users = JSON.parse(localStorage.getItem('seelDataUsers') || '[]');
-    let allOrders = [];
+async function loadOrdersData() {
+    console.log('📦 Loading orders data from Supabase...');
     
-    users.forEach(user => {
-        const userOrders = JSON.parse(localStorage.getItem('userOrders_' + user.email) || '[]');
-        userOrders.forEach(order => {
-            order.userEmail = user.email;
-            order.userName = user.name;
-        });
-        allOrders = allOrders.concat(userOrders);
-    });
-    
-    if (allOrders.length === 0) {
-        document.getElementById('ordersTable').innerHTML = '<div class="empty-state"><i class="fas fa-shopping-cart"></i><p>No orders yet</p></div>';
-        return;
-    }
-    
-    allOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
-    const tableHTML = `
-        <div class="data-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Order ID</th>
-                        <th>Customer</th>
-                        <th>Service</th>
-                        <th>Bundle</th>
-                        <th>Phone</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${allOrders.map(order => {
-                        const amount = order.amount || order.bundleSize.split('GH₵')[1] || '0';
-                        return `
+    try {
+        // Fetch orders from Supabase via admin API
+        const response = await fetch(`${API_URL}/admin?action=getAllOrders`);
+        const result = await response.json();
+        
+        if (!result.success) {
+            console.error('❌ Error loading orders:', result.error);
+            document.getElementById('ordersTable').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Error loading orders from Supabase</p>
+                    <small>${result.error}</small>
+                </div>`;
+            return;
+        }
+        
+        const allOrders = result.data;
+        console.log('📦 Supabase orders found:', allOrders.length);
+        
+        if (allOrders.length === 0) {
+            document.getElementById('ordersTable').innerHTML = '<div class="empty-state"><i class="fas fa-shopping-cart"></i><p>No orders yet</p></div>';
+            return;
+        }
+        
+        const tableHTML = `
+            <div class="data-table">
+                <table>
+                    <thead>
                         <tr>
-                            <td><strong>${order.id}</strong></td>
-                            <td>${order.userName}</td>
-                            <td>${order.service}</td>
-                            <td>${order.bundleSize}</td>
-                            <td>${order.phoneNumber}</td>
-                            <td>GH₵${amount}</td>
-                            <td><span class="status-badge status-${order.status.toLowerCase()}">${order.status}</span></td>
-                            <td>${new Date(order.createdAt).toLocaleString()}</td>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Network</th>
+                            <th>Data Type</th>
+                            <th>Phone</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
                         </tr>
-                    `}).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
+                    </thead>
+                    <tbody>
+                        ${allOrders.map(order => `
+                            <tr>
+                                <td><strong>${order.id.substring(0, 8)}</strong></td>
+                                <td>${order.user_email || 'N/A'}</td>
+                                <td>${order.network || 'N/A'}</td>
+                                <td>${order.data_type || 'N/A'}</td>
+                                <td>${order.beneficiary_number}</td>
+                                <td>GH₵${order.price}</td>
+                                <td><span class="status-badge status-${order.status.toLowerCase()}">${order.status}</span></td>
+                                <td>${new Date(order.created_at).toLocaleString()}</td>
+                                <td>
+                                    <select onchange="updateOrderStatus('${order.id}', this.value)" class="status-select">
+                                        <option value="">Change Status</option>
+                                        <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                        <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>Processing</option>
+                                        <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
+                                        <option value="failed" ${order.status === 'failed' ? 'selected' : ''}>Failed</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        document.getElementById('ordersTable').innerHTML = tableHTML;
+        
+    } catch (error) {
+        console.error('❌ Error loading orders:', error);
+        document.getElementById('ordersTable').innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Error loading orders</p>
+                <small>${error.message}</small>
+            </div>`;
+    }
+}
+
+// Update order status
+async function updateOrderStatus(orderId, newStatus) {
+    if (!newStatus) return;
     
-    document.getElementById('ordersTable').innerHTML = tableHTML;
+    if (!confirm(`Change order status to ${newStatus}?`)) return;
+    
+    try {
+        const response = await fetch(`${API_URL}/admin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'updateOrderStatus',
+                orderId,
+                status: newStatus
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Order status updated successfully!');
+            loadOrdersData(); // Reload orders
+        } else {
+            alert('Error updating order status: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error updating order:', error);
+        alert('Error updating order status');
+    }
 }
 
 // Load reviews data
@@ -490,6 +682,80 @@ function loadReviewsData() {
     `;
     
     document.getElementById('reviewsTable').innerHTML = tableHTML;
+}
+
+// Load contact messages data
+async function loadContactsData() {
+    console.log('📧 Loading contact messages from Supabase...');
+    
+    try {
+        // Fetch contact messages from Supabase via admin API
+        const response = await fetch(`${API_URL}/admin?action=getContactMessages`);
+        const result = await response.json();
+        
+        if (!result.success) {
+            console.error('❌ Error loading contacts:', result.error);
+            document.getElementById('contactsTable').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Error loading contact messages from Supabase</p>
+                    <small>${result.error}</small>
+                </div>`;
+            return;
+        }
+        
+        const messages = result.data;
+        console.log('📧 Contact messages found:', messages.length);
+        
+        if (messages.length === 0) {
+            document.getElementById('contactsTable').innerHTML = '<div class="empty-state"><i class="fas fa-envelope"></i><p>No contact messages yet</p></div>';
+            return;
+        }
+        
+        const tableHTML = `
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Subject</th>
+                            <th>Message</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${messages.map(msg => `
+                            <tr>
+                                <td><strong>${msg.name}</strong></td>
+                                <td>${msg.email}</td>
+                                <td>${msg.phone || 'N/A'}</td>
+                                <td>${msg.subject}</td>
+                                <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${msg.message}">
+                                    ${msg.message}
+                                </td>
+                                <td><span class="status-badge status-${msg.status}">${msg.status}</span></td>
+                                <td>${new Date(msg.created_at).toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        document.getElementById('contactsTable').innerHTML = tableHTML;
+        
+    } catch (error) {
+        console.error('❌ Error loading contacts:', error);
+        document.getElementById('contactsTable').innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Error loading contact messages</p>
+                <small>${error.message}</small>
+            </div>`;
+    }
 }
 
 // Load tickets data
