@@ -394,7 +394,7 @@ async function loadUsersData() {
             return;
         }
         
-        const users = result.data;
+        const users = result.data || [];
         console.log('👥 Supabase users found:', users.length);
         
         if (users.length === 0) {
@@ -545,7 +545,7 @@ async function loadOrdersData() {
             return;
         }
         
-        const allOrders = result.data;
+        const allOrders = result.data || [];
         console.log('📦 Supabase orders found:', allOrders.length);
         
         if (allOrders.length === 0) {
@@ -705,7 +705,7 @@ async function loadContactsData() {
             return;
         }
         
-        const messages = result.data;
+        const messages = result.data || [];
         console.log('📧 Contact messages found:', messages.length);
         
         if (messages.length === 0) {
