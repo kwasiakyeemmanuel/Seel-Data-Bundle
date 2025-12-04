@@ -3,7 +3,8 @@ const bcrypt = require('bcryptjs');
 
 module.exports = async function handler(req, res) {
     try {
-        const password = 'admin123';
+        // Get password from query parameter or use default
+        const password = req.query.password || 'admin123';
         const hash = await bcrypt.hash(password, 10);
         
         res.setHeader('Content-Type', 'application/json');
@@ -13,7 +14,8 @@ module.exports = async function handler(req, res) {
             success: true,
             password: password,
             hash: hash,
-            sql: `UPDATE admin_users SET password_hash = '${hash}' WHERE username = 'admin';`
+            sql: `UPDATE admin_users SET password_hash = '${hash}' WHERE username = 'admin';`,
+            usage: 'To generate hash for custom password, visit: /api/generate-hash?password=YourPassword'
         });
     } catch (error) {
         return res.status(500).json({
