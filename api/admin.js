@@ -14,15 +14,19 @@ module.exports = async function handler(req, res) {
             return res.status(200).end();
         }
         
-        // Only allow POST requests
-        if (req.method !== 'POST') {
+        // Get action from query params (GET) or body (POST)
+        let action, username, password, orderId, status;
+        
+        if (req.method === 'GET') {
+            action = req.query.action;
+        } else if (req.method === 'POST') {
+            ({ action, username, password, orderId, status } = req.body);
+        } else {
             return res.status(405).json({
                 success: false,
                 error: 'Method not allowed'
             });
         }
-        
-        const { action, username, password } = req.body;
         
         // Initialize Supabase client
         const supabaseUrl = process.env.SUPABASE_URL;
