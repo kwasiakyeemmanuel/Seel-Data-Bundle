@@ -1427,6 +1427,11 @@ body {
     .footer-content {
         grid-template-columns: 1fr;
         gap: 20px;
+        display: block;
+    }
+
+    .footer-section {
+        margin-bottom: 20px;
     }
 
     .footer-section:nth-child(2),
@@ -1434,6 +1439,7 @@ body {
         display: inline-block;
         width: 48%;
         vertical-align: top;
+        margin-bottom: 20px;
     }
 
     .footer-section:nth-child(2) {
