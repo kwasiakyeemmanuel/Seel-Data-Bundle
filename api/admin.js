@@ -1,7 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
 
-// Helper: Initialize Supabase client
+// Helper function to initialize Supabase
 function initSupabase() {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
@@ -13,20 +13,18 @@ function initSupabase() {
     return createClient(supabaseUrl, supabaseKey);
 }
 
-// Helper: Set CORS headers
-function setCorsHeaders(res) {
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+// Helper function to send JSON response
+function sendResponse(res, statusCode, data) {
+    return res.status(statusCode).json(data);
 }
 
-// Action: Admin Login
+// === HANDLER FUNCTIONS ===
+
 async function handleLogin(req, res, supabase) {
     const { username, password } = req.body;
     
     if (!username || !password) {
-        return res.status(400).json({
+        return sendResponse(res, 400, {
             success: false,
             error: 'Username and password required'
         });
@@ -41,7 +39,7 @@ async function handleLogin(req, res, supabase) {
         
         if (adminError) {
             console.error('Supabase error:', adminError);
-            return res.status(401).json({
+            return sendResponse(res, 401, {
                 success: false,
                 error: 'Invalid credentials',
                 debug: adminError.message
@@ -49,7 +47,7 @@ async function handleLogin(req, res, supabase) {
         }
         
         if (!admin) {
-            return res.status(401).json({
+            return sendResponse(res, 401, {
                 success: false,
                 error: 'Invalid credentials - user not found'
             });
@@ -58,13 +56,13 @@ async function handleLogin(req, res, supabase) {
         const isValidPassword = await bcrypt.compare(password, admin.password_hash);
         
         if (!isValidPassword) {
-            return res.status(401).json({
+            return sendResponse(res, 401, {
                 success: false,
                 error: 'Invalid credentials - wrong password'
             });
         }
         
-        return res.status(200).json({
+        return sendResponse(res, 200, {
             success: true,
             message: 'Login successful',
             admin: {
@@ -73,16 +71,16 @@ async function handleLogin(req, res, supabase) {
                 role: admin.role || 'admin'
             }
         });
+        
     } catch (error) {
         console.error('Admin login error:', error);
-        return res.status(500).json({
+        return sendResponse(res, 500, {
             success: false,
             error: 'Login failed'
         });
     }
 }
 
-// Action: Get All Users
 async function handleGetAllUsers(res, supabase) {
     try {
         const { data: users, error } = await supabase
@@ -92,20 +90,20 @@ async function handleGetAllUsers(res, supabase) {
         
         if (error) throw error;
         
-        return res.status(200).json({
+        return sendResponse(res, 200, {
             success: true,
             data: users || []
         });
+        
     } catch (error) {
         console.error('Get users error:', error);
-        return res.status(500).json({
+        return sendResponse(res, 500, {
             success: false,
             error: 'Failed to fetch users'
         });
     }
 }
 
-// Action: Get All Orders
 async function handleGetAllOrders(res, supabase) {
     try {
         const { data: orders, error } = await supabase
@@ -125,20 +123,20 @@ async function handleGetAllOrders(res, supabase) {
         
         if (error) throw error;
         
-        return res.status(200).json({
+        return sendResponse(res, 200, {
             success: true,
             data: orders || []
         });
+        
     } catch (error) {
         console.error('Get orders error:', error);
-        return res.status(500).json({
+        return sendResponse(res, 500, {
             success: false,
             error: 'Failed to fetch orders'
         });
     }
 }
 
-// Action: Get Contact Messages
 async function handleGetContactMessages(res, supabase) {
     try {
         const { data: messages, error } = await supabase
@@ -148,25 +146,25 @@ async function handleGetContactMessages(res, supabase) {
         
         if (error) throw error;
         
-        return res.status(200).json({
+        return sendResponse(res, 200, {
             success: true,
             data: messages || []
         });
+        
     } catch (error) {
         console.error('Get contact messages error:', error);
-        return res.status(500).json({
+        return sendResponse(res, 500, {
             success: false,
             error: 'Failed to fetch contact messages'
         });
     }
 }
 
-// Action: Update Order Status
 async function handleUpdateOrderStatus(req, res, supabase) {
     const { orderId, status } = req.body;
     
     if (!orderId || !status) {
-        return res.status(400).json({
+        return sendResponse(res, 400, {
             success: false,
             error: 'Order ID and status required'
         });
@@ -182,21 +180,21 @@ async function handleUpdateOrderStatus(req, res, supabase) {
         
         if (error) throw error;
         
-        return res.status(200).json({
+        return sendResponse(res, 200, {
             success: true,
             message: 'Order status updated',
             order: data
         });
+        
     } catch (error) {
         console.error('Update order status error:', error);
-        return res.status(500).json({
+        return sendResponse(res, 500, {
             success: false,
             error: 'Failed to update order status'
         });
     }
 }
 
-// Action: Get Dashboard Stats
 async function handleGetDashboardStats(res, supabase) {
     try {
         const [usersResult, ordersResult, messagesResult] = await Promise.all([
@@ -208,7 +206,7 @@ async function handleGetDashboardStats(res, supabase) {
         const completedOrders = ordersResult.data?.filter(o => o.status === 'completed') || [];
         const totalRevenue = completedOrders.reduce((sum, order) => sum + parseFloat(order.price || 0), 0);
         
-        return res.status(200).json({
+        return sendResponse(res, 200, {
             success: true,
             stats: {
                 totalUsers: usersResult.count || 0,
@@ -219,53 +217,54 @@ async function handleGetDashboardStats(res, supabase) {
                 totalMessages: messagesResult.count || 0
             }
         });
+        
     } catch (error) {
         console.error('Get dashboard stats error:', error);
-        return res.status(500).json({
+        return sendResponse(res, 500, {
             success: false,
             error: 'Failed to fetch dashboard stats'
         });
     }
 }
 
-// Main handler
-module.exports = async function handler(req, res) {
-// Main handler
+// === MAIN HANDLER ===
+
 module.exports = async function handler(req, res) {
     try {
-        setCorsHeaders(res);
+        // Set CORS headers
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
         
         // Handle OPTIONS preflight
         if (req.method === 'OPTIONS') {
             return res.status(200).end();
         }
         
-        // Get action from query params (GET) or body (POST)
-        let action;
-        
-        if (req.method === 'GET') {
-            action = req.query.action;
-        } else if (req.method === 'POST') {
-            action = req.body.action;
-        } else {
-            return res.status(405).json({
+        // Validate HTTP method
+        if (req.method !== 'GET' && req.method !== 'POST') {
+            return sendResponse(res, 405, {
                 success: false,
                 error: 'Method not allowed'
             });
         }
+        
+        // Get action from query params (GET) or body (POST)
+        const action = req.method === 'GET' ? req.query.action : req.body.action;
         
         // Initialize Supabase
         let supabase;
         try {
             supabase = initSupabase();
         } catch (error) {
-            return res.status(500).json({
+            return sendResponse(res, 500, {
                 success: false,
                 error: error.message
             });
         }
         
-        // Route to action handlers
+        // Route to appropriate handler
         switch (action) {
             case 'login':
                 return await handleLogin(req, res, supabase);
@@ -286,7 +285,7 @@ module.exports = async function handler(req, res) {
                 return await handleGetDashboardStats(res, supabase);
             
             default:
-                return res.status(400).json({
+                return sendResponse(res, 400, {
                     success: false,
                     error: 'Invalid action'
                 });
@@ -296,7 +295,7 @@ module.exports = async function handler(req, res) {
         console.error('Critical admin API error:', outerError);
         try {
             res.setHeader('Content-Type', 'application/json');
-            return res.status(500).json({
+            return sendResponse(res, 500, {
                 success: false,
                 error: 'Server error'
             });
