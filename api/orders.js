@@ -3,14 +3,134 @@
 
 const { createOrder, getUserOrders, updateOrderStatus, createTransaction } = require('../supabase-config.js');
 
-module.exports = async function handler(req, res) {
-    // Enable CORS and set Content-Type
+// Helper: Set CORS headers
+function setCorsHeaders(res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     res.setHeader('Content-Type', 'application/json');
+}
 
-    // Handle preflight
+// Helper: Format order response
+function formatOrder(order) {
+    return {
+        id: order.id,
+        network: order.network,
+        dataType: order.data_type,
+        beneficiaryNumber: order.beneficiary_number,
+        price: order.price,
+        paymentReference: order.payment_reference,
+        status: order.status,
+        createdAt: order.created_at
+    };
+}
+
+// Handler: Create order
+async function handleCreateOrder(req, res) {
+    const { userId, network, dataType, beneficiaryNumber, price, paymentReference } = req.body;
+
+    if (!userId || !network || !dataType || !beneficiaryNumber || !price) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'All order fields are required' 
+        });
+    }
+
+    const order = await createOrder({
+        userId,
+        network,
+        dataType,
+        beneficiaryNumber,
+        price,
+        paymentReference: paymentReference || null,
+        status: 'pending'
+    });
+
+    return res.status(201).json({
+        success: true,
+        order: formatOrder(order)
+    });
+}
+
+// Handler: Get user order history
+async function handleGetOrderHistory(req, res) {
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'User ID is required' 
+        });
+    }
+
+    const orders = await getUserOrders(userId);
+    const formattedOrders = orders.map(formatOrder);
+
+    return res.status(200).json({
+        success: true,
+        orders: formattedOrders,
+        total: formattedOrders.length
+    });
+}
+
+// Handler: Update order status
+async function handleUpdateOrderStatus(req, res) {
+    const { orderId, status } = req.body;
+
+    if (!orderId || !status) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Order ID and status are required' 
+        });
+    }
+
+    const updatedOrder = await updateOrderStatus(orderId, status);
+
+    return res.status(200).json({
+        success: true,
+        order: {
+            id: updatedOrder.id,
+            status: updatedOrder.status,
+            updatedAt: updatedOrder.updated_at
+        }
+    });
+}
+
+// Handler: Create transaction
+async function handleCreateTransaction(req, res) {
+    const { orderId, userId, paymentReference, amount, status } = req.body;
+
+    if (!orderId || !userId || !paymentReference || !amount || !status) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'All transaction fields are required' 
+        });
+    }
+
+    const transaction = await createTransaction({
+        orderId,
+        userId,
+        paymentReference,
+        amount,
+        status
+    });
+
+    return res.status(201).json({
+        success: true,
+        transaction: {
+            id: transaction.id,
+            paymentReference: transaction.payment_reference,
+            amount: transaction.amount,
+            status: transaction.status,
+            createdAt: transaction.created_at
+        }
+    });
+}
+
+// Main handler
+module.exports = async function handler(req, res) {
+    setCorsHeaders(res);
+
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
@@ -18,130 +138,22 @@ module.exports = async function handler(req, res) {
     const { action } = req.body;
 
     try {
-        // === CREATE ORDER ===
         if (action === 'create' && req.method === 'POST') {
-            const { userId, network, dataType, beneficiaryNumber, price, paymentReference } = req.body;
-
-            // Validate input
-            if (!userId || !network || !dataType || !beneficiaryNumber || !price) {
-                return res.status(400).json({ 
-                    success: false, 
-                    error: 'All order fields are required' 
-                });
-            }
-
-            // Create order
-            const order = await createOrder({
-                userId,
-                network,
-                dataType,
-                beneficiaryNumber,
-                price,
-                paymentReference: paymentReference || null,
-                status: 'pending'
-            });
-
-            return res.status(201).json({
-                success: true,
-                order: {
-                    id: order.id,
-                    network: order.network,
-                    dataType: order.data_type,
-                    beneficiaryNumber: order.beneficiary_number,
-                    price: order.price,
-                    status: order.status,
-                    createdAt: order.created_at
-                }
-            });
+            return await handleCreateOrder(req, res);
         }
-
-        // === GET USER ORDERS ===
+        
         if (action === 'history' && req.method === 'POST') {
-            const { userId } = req.body;
-
-            if (!userId) {
-                return res.status(400).json({ 
-                    success: false, 
-                    error: 'User ID is required' 
-                });
-            }
-
-            const orders = await getUserOrders(userId);
-
-            // Format orders
-            const formattedOrders = orders.map(order => ({
-                id: order.id,
-                network: order.network,
-                dataType: order.data_type,
-                beneficiaryNumber: order.beneficiary_number,
-                price: order.price,
-                paymentReference: order.payment_reference,
-                status: order.status,
-                createdAt: order.created_at
-            }));
-
-            return res.status(200).json({
-                success: true,
-                orders: formattedOrders,
-                total: formattedOrders.length
-            });
+            return await handleGetOrderHistory(req, res);
         }
-
-        // === UPDATE ORDER STATUS ===
+        
         if (action === 'update-status' && req.method === 'POST') {
-            const { orderId, status } = req.body;
-
-            if (!orderId || !status) {
-                return res.status(400).json({ 
-                    success: false, 
-                    error: 'Order ID and status are required' 
-                });
-            }
-
-            const updatedOrder = await updateOrderStatus(orderId, status);
-
-            return res.status(200).json({
-                success: true,
-                order: {
-                    id: updatedOrder.id,
-                    status: updatedOrder.status,
-                    updatedAt: updatedOrder.updated_at
-                }
-            });
+            return await handleUpdateOrderStatus(req, res);
         }
-
-        // === CREATE TRANSACTION ===
+        
         if (action === 'create-transaction' && req.method === 'POST') {
-            const { orderId, userId, paymentReference, amount, status } = req.body;
-
-            if (!orderId || !userId || !paymentReference || !amount || !status) {
-                return res.status(400).json({ 
-                    success: false, 
-                    error: 'All transaction fields are required' 
-                });
-            }
-
-            const transaction = await createTransaction({
-                orderId,
-                userId,
-                paymentReference,
-                amount,
-                status
-            });
-
-            return res.status(201).json({
-                success: true,
-                transaction: {
-                    id: transaction.id,
-                    paymentReference: transaction.payment_reference,
-                    amount: transaction.amount,
-                    status: transaction.status,
-                    createdAt: transaction.created_at
-                }
-            });
+            return await handleCreateTransaction(req, res);
         }
 
-        // Invalid action
         return res.status(400).json({ 
             success: false, 
             error: 'Invalid action' 

@@ -1,55 +1,69 @@
 const { createContact } = require('../supabase-config.js');
 
+// Helper: Set CORS headers
+function setCorsHeaders(res) {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+// Helper: Validate required fields
+function validateRequiredFields(data) {
+    const { name, email, subject, message } = data;
+    return name && email && subject && message;
+}
+
+// Helper: Validate email format
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// Helper: Sanitize contact data
+function sanitizeContactData({ name, email, phone, subject, message }) {
+    return {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone ? phone.trim() : null,
+        subject: subject.trim(),
+        message: message.trim()
+    };
+}
+
+// Helper: Error response
+function sendError(res, statusCode, message) {
+    return res.status(statusCode).json({
+        status: 'error',
+        message
+    });
+}
+
+// Main handler
 module.exports = async function handler(req, res) {
     try {
-        // Set CORS headers
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        setCorsHeaders(res);
         
-        // Handle OPTIONS preflight
         if (req.method === 'OPTIONS') {
             return res.status(200).end();
         }
         
-        // Only allow POST
         if (req.method !== 'POST') {
-            return res.status(405).json({
-                status: 'error',
-                message: 'Method not allowed'
-            });
+            return sendError(res, 405, 'Method not allowed');
         }
         
         try {
             const { name, email, phone, subject, message } = req.body;
             
-            // Validate required fields
-            if (!name || !email || !subject || !message) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'All required fields must be filled'
-                });
+            if (!validateRequiredFields({ name, email, subject, message })) {
+                return sendError(res, 400, 'All required fields must be filled');
             }
             
-            // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'Invalid email format'
-                });
+            if (!isValidEmail(email)) {
+                return sendError(res, 400, 'Invalid email format');
             }
             
-            // Save to Supabase
-            const contactData = {
-                name: name.trim(),
-                email: email.trim().toLowerCase(),
-                phone: phone ? phone.trim() : null,
-                subject: subject.trim(),
-                message: message.trim()
-            };
-            
+            const contactData = sanitizeContactData({ name, email, phone, subject, message });
             const result = await createContact(contactData);
             
             if (!result) {
@@ -65,20 +79,13 @@ module.exports = async function handler(req, res) {
             
         } catch (error) {
             console.error('❌ Contact form error:', error);
-            return res.status(500).json({
-                status: 'error',
-                message: 'Failed to send message. Please try again.'
-            });
+            return sendError(res, 500, 'Failed to send message. Please try again.');
         }
         
     } catch (outerError) {
         console.error('❌ Critical contact API error:', outerError);
         try {
-            res.setHeader('Content-Type', 'application/json');
-            return res.status(500).json({
-                status: 'error',
-                message: 'Server error'
-            });
+            return sendError(res, 500, 'Server error');
         } catch (finalError) {
             return res.status(500).end('{"status":"error","message":"Server error"}');
         }
