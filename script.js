@@ -1881,6 +1881,12 @@ function showPurchaseModal(serviceName) {
     
     document.body.appendChild(modal);
     modal.style.display = 'flex';
+    
+    // Explicitly set email value after modal is rendered
+    const emailInput = document.getElementById('email');
+    if (emailInput && userEmail) {
+        emailInput.value = userEmail;
+    }
 }
 
 // Close purchase modal
