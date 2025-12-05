@@ -1980,7 +1980,6 @@ function handlePurchase(event) {
                 amount: amount,
                 currency: 'GHS',
                 ref: 'SEEL_' + Math.floor((Math.random() * 1000000000) + 1),
-                bearer: 'customer', // Customer pays Paystack transaction fees
                 metadata: {
                     custom_fields: [
                         {
