@@ -1275,10 +1275,15 @@ body {
     .hero-actions {
         flex-direction: column;
         width: 100%;
+        margin-bottom: 20px;
     }
 
     .btn-large {
         width: 100%;
+    }
+    
+    .share-btn {
+        margin-top: 20px;
     }
 
     .section-header h2 {
