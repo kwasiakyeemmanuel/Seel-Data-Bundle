@@ -1931,6 +1931,15 @@ function handlePurchase(event) {
         return;
     }
     
+    // Calculate transaction fee and show breakdown
+    const amountMatch = data.bundleSize.match(/GH₵([0-9.]+)/);
+    const baseAmount = amountMatch ? parseFloat(amountMatch[1]) : 5;
+    const fee = parseFloat(((baseAmount * 0.015) + 1 + (baseAmount * 0.015 * 0.005)).toFixed(2));
+    const total = parseFloat((baseAmount + fee).toFixed(2));
+    
+    // Show payment breakdown
+    toast.info(`Payment Breakdown:\n• Bundle: GH₵${baseAmount.toFixed(2)}\n• Transaction Fee: GH₵${fee.toFixed(2)}\n• Total: GH₵${total.toFixed(2)}`, 5000);
+    
     // Show loading state
     const submitBtn = event.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
@@ -1965,10 +1974,18 @@ function handlePurchase(event) {
     
     // Extract amount from bundle size
     const amountMatch = data.bundleSize.match(/GH₵([0-9.]+)/);
-    const amount = amountMatch ? parseFloat(amountMatch[1]) * 100 : 500; // Convert to pesewas
+    const baseAmount = amountMatch ? parseFloat(amountMatch[1]) * 100 : 500; // Convert to pesewas
+    
+    // Calculate Paystack transaction charges (customer pays)
+    // Paystack formula: (Amount * 0.015) + 100 pesewas + (Amount * 0.015 * 0.005)
+    // This adds 1.5% + GH₵1.00 + 0.5% of the charge
+    const paystackFee = Math.ceil((baseAmount * 0.015) + 100 + (baseAmount * 0.015 * 0.005));
+    const totalAmount = baseAmount + paystackFee;
     
     console.log('Initializing Paystack with:');
-    console.log('- Amount:', amount, 'pesewas');
+    console.log('- Base Amount:', baseAmount, 'pesewas (GH₵' + (baseAmount/100).toFixed(2) + ')');
+    console.log('- Paystack Fee:', paystackFee, 'pesewas (GH₵' + (paystackFee/100).toFixed(2) + ')');
+    console.log('- Total Amount:', totalAmount, 'pesewas (GH₵' + (totalAmount/100).toFixed(2) + ')');
     console.log('- Email:', data.email);
     console.log('- Currency: GHS');
     
@@ -1977,7 +1994,7 @@ function handlePurchase(event) {
         const handler = PaystackPop.setup({
                 key: PAYSTACK_PUBLIC_KEY,
                 email: data.email,
-                amount: amount,
+                amount: totalAmount,
                 currency: 'GHS',
                 ref: 'SEEL_' + Math.floor((Math.random() * 1000000000) + 1),
                 metadata: {
