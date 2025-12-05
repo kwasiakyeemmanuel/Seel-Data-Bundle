@@ -1925,6 +1925,11 @@ function handlePurchase(event) {
     const PAYSTACK_PUBLIC_KEY = window.Security ? window.Security.getPaystackKey() : 'pk_live_c5bf872b86583d795bd34b259392f6a2c078deb1';
     const hasValidKey = PAYSTACK_PUBLIC_KEY && !PAYSTACK_PUBLIC_KEY.includes('xxxxxxxxxx');
     
+    // Debug logging
+    console.log('Paystack Key Available:', !!PAYSTACK_PUBLIC_KEY);
+    console.log('PaystackPop Available:', typeof PaystackPop !== 'undefined');
+    console.log('Has Valid Key:', hasValidKey);
+    
     if (hasValidKey && typeof PaystackPop !== 'undefined') {
         // Extract amount from bundle size
         const amountMatch = data.bundleSize.match(/GH₵([0-9.]+)/);
@@ -1974,6 +1979,16 @@ function handlePurchase(event) {
         
         handler.openIframe();
     } else {
+        // Error: Paystack not available
+        console.error('Paystack Payment Error:');
+        console.error('- Has Valid Key:', hasValidKey);
+        console.error('- PaystackPop Available:', typeof PaystackPop !== 'undefined');
+        
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        
+        showNotification('Payment system is currently unavailable. Please contact support.', 'error');
+        
         // Demo mode - Simulate payment process
         console.log('Running in DEMO mode. Add your Paystack key to enable real payments.');
         
