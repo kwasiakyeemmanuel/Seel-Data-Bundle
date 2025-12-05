@@ -1919,6 +1919,14 @@ function handlePurchase(event) {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     submitBtn.disabled = true;
     
+    // Set a timeout to reset button if payment doesn't initialize within 10 seconds
+    const timeoutId = setTimeout(() => {
+        console.error('Payment initialization timeout');
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        showNotification('Payment initialization timed out. Please try again.', 'error');
+    }, 10000);
+    
     // Check if user has a valid Paystack key
     // IMPORTANT: Using obfuscated Paystack key from Security module
     // The actual key is: pk_live_c5bf872b86583d795bd34b259392f6a2c078deb1
@@ -1935,51 +1943,66 @@ function handlePurchase(event) {
         const amountMatch = data.bundleSize.match(/GH₵([0-9.]+)/);
         const amount = amountMatch ? parseFloat(amountMatch[1]) * 100 : 500; // Convert to pesewas
         
-        // Initialize Paystack payment
-        const handler = PaystackPop.setup({
-            key: PAYSTACK_PUBLIC_KEY,
-            email: data.email,
-            amount: amount,
-            currency: 'GHS',
-            ref: 'SEEL_' + Math.floor((Math.random() * 1000000000) + 1),
-            metadata: {
-                custom_fields: [
-                    {
-                        display_name: "Service",
-                        variable_name: "service",
-                        value: data.service
-                    },
-                    {
-                        display_name: "Phone Number",
-                        variable_name: "phone_number",
-                        value: data.phoneNumber
-                    },
-                    {
-                        display_name: "Bundle Size",
-                        variable_name: "bundle_size",
-                        value: data.bundleSize
-                    }
-                ]
-            },
-            callback: function(response) {
-                // Payment successful
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-                closePurchaseModal();
-                
-                // Send data to your backend to verify payment
-                verifyPayment(response.reference, data);
-            },
-            onClose: function() {
-                // User closed payment modal
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }
-        });
+        console.log('Initializing Paystack with amount:', amount);
         
-        handler.openIframe();
+        try {
+            // Initialize Paystack payment
+            const handler = PaystackPop.setup({
+                key: PAYSTACK_PUBLIC_KEY,
+                email: data.email,
+                amount: amount,
+                currency: 'GHS',
+                ref: 'SEEL_' + Math.floor((Math.random() * 1000000000) + 1),
+                metadata: {
+                    custom_fields: [
+                        {
+                            display_name: "Service",
+                            variable_name: "service",
+                            value: data.service
+                        },
+                        {
+                            display_name: "Phone Number",
+                            variable_name: "phone_number",
+                            value: data.phoneNumber
+                        },
+                        {
+                            display_name: "Bundle Size",
+                            variable_name: "bundle_size",
+                            value: data.bundleSize
+                        }
+                    ]
+                },
+                callback: function(response) {
+                    // Payment successful
+                    console.log('Payment successful:', response);
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    closePurchaseModal();
+                    
+                    // Send data to your backend to verify payment
+                    verifyPayment(response.reference, data);
+                },
+                onClose: function() {
+                    // User closed payment modal
+                    console.log('Payment modal closed by user');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+            
+            console.log('Opening Paystack iframe...');
+            handler.openIframe();
+            clearTimeout(timeoutId); // Clear timeout since Paystack opened successfully
+        } catch (error) {
+            console.error('Error initializing Paystack:', error);
+            clearTimeout(timeoutId);
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            showNotification('Failed to initialize payment. Please try again.', 'error');
+        }
     } else {
         // Error: Paystack not available
+        clearTimeout(timeoutId);
         console.error('Paystack Payment Error:');
         console.error('- Has Valid Key:', hasValidKey);
         console.error('- PaystackPop Available:', typeof PaystackPop !== 'undefined');
