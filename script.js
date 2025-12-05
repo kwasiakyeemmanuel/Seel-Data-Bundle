@@ -1914,7 +1914,7 @@ function handlePurchase(event) {
     
     // Validate email
     if (!data.email || data.email === 'customer@seeldata.com') {
-        showNotification('Please enter a valid email address', 'error');
+        toast.error('Please enter a valid email address');
         return;
     }
     
@@ -1936,7 +1936,7 @@ function handlePurchase(event) {
         console.error('Payment initialization timeout');
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-        showNotification('Payment initialization timed out. Please try again.', 'error');
+        toast.error('Payment initialization timed out. Please try again.');
     }, 10000);
     
     // Check if user has a valid Paystack key
@@ -1953,7 +1953,7 @@ function handlePurchase(event) {
         console.error('PaystackPop is not defined - script may not have loaded');
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-        showNotification('Payment system failed to load. Please refresh the page and try again.', 'error');
+        toast.error('Payment system failed to load. Please refresh the page and try again.');
         return;
     }
     
@@ -2020,7 +2020,7 @@ function handlePurchase(event) {
         clearTimeout(timeoutId);
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-        showNotification('Failed to initialize payment: ' + error.message, 'error');
+        toast.error('Failed to initialize payment: ' + error.message);
     }
 }
 
