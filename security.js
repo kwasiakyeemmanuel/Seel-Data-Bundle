@@ -78,9 +78,12 @@ function encryptData(data) {
 // Decrypt data
 function decryptData(encrypted) {
     try {
+        if (!encrypted || typeof encrypted !== 'string') {
+            return null;
+        }
         return JSON.parse(decodeURIComponent(atob(encrypted)));
     } catch (e) {
-        console.error('Decryption error');
+        // Silently return null for non-encrypted data
         return null;
     }
 }

@@ -20,16 +20,22 @@ function getCurrentUser() {
         const data = localStorage.getItem('currentUser');
         if (!data) return null;
         
-        // Try to decrypt if Security module available
-        const decryptedData = window.Security ? window.Security.decryptData(data) : data;
-        return JSON.parse(decryptedData);
-    } catch (error) {
-        // Fallback to plain JSON if decryption fails (backwards compatibility)
+        // Try to parse as plain JSON first
         try {
-            return JSON.parse(localStorage.getItem('currentUser') || 'null');
-        } catch (e) {
+            return JSON.parse(data);
+        } catch (parseError) {
+            // If plain JSON fails, try decryption (for encrypted data)
+            if (window.Security && typeof window.Security.decryptData === 'function') {
+                const decryptedData = window.Security.decryptData(data);
+                if (decryptedData) {
+                    return decryptedData;
+                }
+            }
             return null;
         }
+    } catch (error) {
+        console.error('Error getting current user:', error);
+        return null;
     }
 }
 
