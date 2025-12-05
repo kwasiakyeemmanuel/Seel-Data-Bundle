@@ -1850,6 +1850,7 @@ function showPurchaseModal(serviceName) {
                             name="email" 
                             placeholder="your@email.com"
                             value="${userEmail}"
+                            readonly
                             required
                         >
                         <small>Email for payment confirmation and data delivery updates</small>
