@@ -1842,7 +1842,7 @@ function showPurchaseModal(serviceName) {
 
                     <div class="form-group">
                         <label for="email">
-                            <i class="fas fa-envelope"></i> Email
+                            <i class="fas fa-envelope"></i> Email *
                         </label>
                         <input 
                             type="email" 
@@ -1850,10 +1850,9 @@ function showPurchaseModal(serviceName) {
                             name="email" 
                             placeholder="your@email.com"
                             value="${userEmail}"
-                            readonly
-                            style="background-color: #f5f5f5; cursor: not-allowed;"
+                            required
                         >
-                        <small>Your registered email address</small>
+                        <small>Email for payment confirmation and data delivery updates</small>
                     </div>
 
                     <div class="form-info">
@@ -1906,6 +1905,12 @@ function handlePurchase(event) {
         email: formData.get('email') || 'customer@seeldata.com'
     };
     
+    // Validate email
+    if (!data.email || data.email === 'customer@seeldata.com') {
+        showNotification('Please enter a valid email address', 'error');
+        return;
+    }
+    
     // Validate phone number
     const validation = validatePhoneNumber(data.phoneNumber, data.service);
     if (!validation.valid) {
@@ -1928,26 +1933,35 @@ function handlePurchase(event) {
     }, 10000);
     
     // Check if user has a valid Paystack key
-    // IMPORTANT: Using obfuscated Paystack key from Security module
-    // The actual key is: pk_live_c5bf872b86583d795bd34b259392f6a2c078deb1
-    const PAYSTACK_PUBLIC_KEY = window.Security ? window.Security.getPaystackKey() : 'pk_live_c5bf872b86583d795bd34b259392f6a2c078deb1';
-    const hasValidKey = PAYSTACK_PUBLIC_KEY && !PAYSTACK_PUBLIC_KEY.includes('xxxxxxxxxx');
+    const PAYSTACK_PUBLIC_KEY = 'pk_live_c5bf872b86583d795bd34b259392f6a2c078deb1';
     
     // Debug logging
+    console.log('Payment Data:', data);
     console.log('Paystack Key Available:', !!PAYSTACK_PUBLIC_KEY);
     console.log('PaystackPop Available:', typeof PaystackPop !== 'undefined');
-    console.log('Has Valid Key:', hasValidKey);
+    console.log('Window object:', typeof window);
     
-    if (hasValidKey && typeof PaystackPop !== 'undefined') {
-        // Extract amount from bundle size
-        const amountMatch = data.bundleSize.match(/GH₵([0-9.]+)/);
-        const amount = amountMatch ? parseFloat(amountMatch[1]) * 100 : 500; // Convert to pesewas
-        
-        console.log('Initializing Paystack with amount:', amount);
-        
-        try {
-            // Initialize Paystack payment
-            const handler = PaystackPop.setup({
+    if (typeof PaystackPop === 'undefined') {
+        clearTimeout(timeoutId);
+        console.error('PaystackPop is not defined - script may not have loaded');
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        showNotification('Payment system failed to load. Please refresh the page and try again.', 'error');
+        return;
+    }
+    
+    // Extract amount from bundle size
+    const amountMatch = data.bundleSize.match(/GH₵([0-9.]+)/);
+    const amount = amountMatch ? parseFloat(amountMatch[1]) * 100 : 500; // Convert to pesewas
+    
+    console.log('Initializing Paystack with:');
+    console.log('- Amount:', amount, 'pesewas');
+    console.log('- Email:', data.email);
+    console.log('- Currency: GHS');
+    
+    try {
+        // Initialize Paystack payment
+        const handler = PaystackPop.setup({
                 key: PAYSTACK_PUBLIC_KEY,
                 email: data.email,
                 amount: amount,
@@ -1993,74 +2007,17 @@ function handlePurchase(event) {
             console.log('Opening Paystack iframe...');
             handler.openIframe();
             clearTimeout(timeoutId); // Clear timeout since Paystack opened successfully
-        } catch (error) {
-            console.error('Error initializing Paystack:', error);
-            clearTimeout(timeoutId);
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            showNotification('Failed to initialize payment. Please try again.', 'error');
-        }
-    } else {
-        // Error: Paystack not available
+    } catch (error) {
+        console.error('Error initializing Paystack:', error);
+        console.error('Error details:', error.message, error.stack);
         clearTimeout(timeoutId);
-        console.error('Paystack Payment Error:');
-        console.error('- Has Valid Key:', hasValidKey);
-        console.error('- PaystackPop Available:', typeof PaystackPop !== 'undefined');
-        
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-        
-        showNotification('Payment system is currently unavailable. Please contact support.', 'error');
-        
-        // Demo mode - Simulate payment process
-        console.log('Running in DEMO mode. Add your Paystack key to enable real payments.');
-        
-        setTimeout(() => {
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            closePurchaseModal();
-            
-            const demoRef = 'DEMO_' + Math.floor((Math.random() * 1000000000) + 1);
-            
-            // Show demo payment simulation
-            const paymentSimModal = document.createElement('div');
-            paymentSimModal.className = 'modal';
-            paymentSimModal.id = 'paymentSimModal';
-            paymentSimModal.innerHTML = `
-                <div class="modal-content success-modal">
-                    <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
-                    <div class="success-icon" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <h2>Demo Mode</h2>
-                    <p>Payment simulation in progress...</p>
-                    <div class="order-summary">
-                        <div class="summary-item">
-                            <span>Amount:</span>
-                            <strong>${data.bundleSize}</strong>
-                        </div>
-                        <div class="summary-item">
-                            <span>Phone:</span>
-                            <strong>${data.phoneNumber}</strong>
-                        </div>
-                    </div>
-                    <small style="color: #666; display: block; margin-top: 10px;">
-                        Add your Paystack key in script.js to enable real payments
-                    </small>
-                </div>
-            `;
-            document.body.appendChild(paymentSimModal);
-            paymentSimModal.style.display = 'flex';
-            
-            setTimeout(() => {
-                paymentSimModal.remove();
-                verifyPayment(demoRef, data);
-            }, 2000);
-        }, 1000);
+        showNotification('Failed to initialize payment: ' + error.message, 'error');
     }
 }
 
-// Verify payment with backend
+// Verify payment after successful Paystack transaction
 async function verifyPayment(reference, orderData) {
     // Show verification message
     const verifyingModal = document.createElement('div');
