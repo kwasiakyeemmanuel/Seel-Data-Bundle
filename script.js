@@ -1931,14 +1931,20 @@ function handlePurchase(event) {
         return;
     }
     
-    // Calculate transaction fee and show breakdown
+    // Extract amount from bundle size and calculate fees
     const amountMatch = data.bundleSize.match(/GH₵([0-9.]+)/);
-    const baseAmount = amountMatch ? parseFloat(amountMatch[1]) : 5;
-    const fee = parseFloat(((baseAmount * 0.015) + 1 + (baseAmount * 0.015 * 0.005)).toFixed(2));
-    const total = parseFloat((baseAmount + fee).toFixed(2));
+    const baseAmountCedis = amountMatch ? parseFloat(amountMatch[1]) : 5;
+    const baseAmount = Math.round(baseAmountCedis * 100); // Convert to pesewas
     
-    // Show payment breakdown
-    toast.info(`Payment Breakdown:\n• Bundle: GH₵${baseAmount.toFixed(2)}\n• Transaction Fee: GH₵${fee.toFixed(2)}\n• Total: GH₵${total.toFixed(2)}`, 5000);
+    // Calculate Paystack transaction charges (customer pays)
+    // Paystack formula: (Amount * 0.015) + 100 pesewas + (Amount * 0.015 * 0.005)
+    const paystackFee = Math.ceil((baseAmount * 0.015) + 100 + (baseAmount * 0.015 * 0.005));
+    const totalAmount = baseAmount + paystackFee;
+    
+    // Show payment breakdown to customer
+    const feeInCedis = (paystackFee / 100).toFixed(2);
+    const totalInCedis = (totalAmount / 100).toFixed(2);
+    toast.info(`Payment Breakdown:\n• Bundle: GH₵${baseAmountCedis.toFixed(2)}\n• Transaction Fee: GH₵${feeInCedis}\n• Total: GH₵${totalInCedis}`, 5000);
     
     // Show loading state
     const submitBtn = event.target.querySelector('button[type="submit"]');
@@ -1971,16 +1977,6 @@ function handlePurchase(event) {
         toast.error('Payment system failed to load. Please refresh the page and try again.');
         return;
     }
-    
-    // Extract amount from bundle size
-    const amountMatch = data.bundleSize.match(/GH₵([0-9.]+)/);
-    const baseAmount = amountMatch ? parseFloat(amountMatch[1]) * 100 : 500; // Convert to pesewas
-    
-    // Calculate Paystack transaction charges (customer pays)
-    // Paystack formula: (Amount * 0.015) + 100 pesewas + (Amount * 0.015 * 0.005)
-    // This adds 1.5% + GH₵1.00 + 0.5% of the charge
-    const paystackFee = Math.ceil((baseAmount * 0.015) + 100 + (baseAmount * 0.015 * 0.005));
-    const totalAmount = baseAmount + paystackFee;
     
     console.log('Initializing Paystack with:');
     console.log('- Base Amount:', baseAmount, 'pesewas (GH₵' + (baseAmount/100).toFixed(2) + ')');
