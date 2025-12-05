@@ -621,11 +621,6 @@ async function loadOrdersData() {
         showOrdersError('Error loading orders', error.message);
     }
 }
-                <p>Error loading orders</p>
-                <small>${error.message}</small>
-            </div>`;
-    }
-}
 
 // Update order status
 async function updateOrderStatus(orderId, newStatus) {
