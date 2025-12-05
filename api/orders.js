@@ -25,11 +25,17 @@ function formatOrder(order) {
     };
 }
 
+// Helper: Validate order creation fields
+function validateOrderFields(fields) {
+    const { userId, network, dataType, beneficiaryNumber, price } = fields;
+    return userId && network && dataType && beneficiaryNumber && price;
+}
+
 // Handler: Create order
 async function handleCreateOrder(req, res) {
     const { userId, network, dataType, beneficiaryNumber, price, paymentReference } = req.body;
 
-    if (!userId || !network || !dataType || !beneficiaryNumber || !price) {
+    if (!validateOrderFields({ userId, network, dataType, beneficiaryNumber, price })) {
         return res.status(400).json({ 
             success: false, 
             error: 'All order fields are required' 
@@ -96,11 +102,17 @@ async function handleUpdateOrderStatus(req, res) {
     });
 }
 
+// Helper: Validate transaction fields
+function validateTransactionFields(fields) {
+    const { orderId, userId, paymentReference, amount, status } = fields;
+    return orderId && userId && paymentReference && amount && status;
+}
+
 // Handler: Create transaction
 async function handleCreateTransaction(req, res) {
     const { orderId, userId, paymentReference, amount, status } = req.body;
 
-    if (!orderId || !userId || !paymentReference || !amount || !status) {
+    if (!validateTransactionFields({ orderId, userId, paymentReference, amount, status })) {
         return res.status(400).json({ 
             success: false, 
             error: 'All transaction fields are required' 
@@ -127,6 +139,22 @@ async function handleCreateTransaction(req, res) {
     });
 }
 
+// Helper: Route action to handler
+async function routeAction(action, method, req, res) {
+    const routes = {
+        'create': handleCreateOrder,
+        'history': handleGetOrderHistory,
+        'update-status': handleUpdateOrderStatus,
+        'create-transaction': handleCreateTransaction
+    };
+    
+    if (method !== 'POST') {
+        return null;
+    }
+    
+    return routes[action] || null;
+}
+
 // Main handler
 module.exports = async function handler(req, res) {
     setCorsHeaders(res);
@@ -138,20 +166,10 @@ module.exports = async function handler(req, res) {
     const { action } = req.body;
 
     try {
-        if (action === 'create' && req.method === 'POST') {
-            return await handleCreateOrder(req, res);
-        }
+        const actionHandler = await routeAction(action, req.method, req, res);
         
-        if (action === 'history' && req.method === 'POST') {
-            return await handleGetOrderHistory(req, res);
-        }
-        
-        if (action === 'update-status' && req.method === 'POST') {
-            return await handleUpdateOrderStatus(req, res);
-        }
-        
-        if (action === 'create-transaction' && req.method === 'POST') {
-            return await handleCreateTransaction(req, res);
+        if (actionHandler) {
+            return await actionHandler(req, res);
         }
 
         return res.status(400).json({ 

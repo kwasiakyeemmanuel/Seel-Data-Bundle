@@ -39,6 +39,33 @@ function sendError(res, statusCode, message) {
     });
 }
 
+// Helper: Process contact submission
+async function processContactSubmission(req, res) {
+    const { name, email, phone, subject, message } = req.body;
+    
+    if (!validateRequiredFields({ name, email, subject, message })) {
+        return sendError(res, 400, 'All required fields must be filled');
+    }
+    
+    if (!isValidEmail(email)) {
+        return sendError(res, 400, 'Invalid email format');
+    }
+    
+    const contactData = sanitizeContactData({ name, email, phone, subject, message });
+    const result = await createContact(contactData);
+    
+    if (!result) {
+        throw new Error('Failed to save contact message');
+    }
+    
+    console.log('✅ Contact message saved:', result.id);
+    
+    return res.status(200).json({
+        status: 'success',
+        message: 'Message sent successfully'
+    });
+}
+
 // Main handler
 module.exports = async function handler(req, res) {
     try {
@@ -53,30 +80,7 @@ module.exports = async function handler(req, res) {
         }
         
         try {
-            const { name, email, phone, subject, message } = req.body;
-            
-            if (!validateRequiredFields({ name, email, subject, message })) {
-                return sendError(res, 400, 'All required fields must be filled');
-            }
-            
-            if (!isValidEmail(email)) {
-                return sendError(res, 400, 'Invalid email format');
-            }
-            
-            const contactData = sanitizeContactData({ name, email, phone, subject, message });
-            const result = await createContact(contactData);
-            
-            if (!result) {
-                throw new Error('Failed to save contact message');
-            }
-            
-            console.log('✅ Contact message saved:', result.id);
-            
-            return res.status(200).json({
-                status: 'success',
-                message: 'Message sent successfully'
-            });
-            
+            return await processContactSubmission(req, res);
         } catch (error) {
             console.error('❌ Contact form error:', error);
             return sendError(res, 500, 'Failed to send message. Please try again.');

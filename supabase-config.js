@@ -56,25 +56,35 @@ async function getUserByEmail(email) {
     }
 }
 
+// Helper: Validate required user fields
+function validateUserFields(userData) {
+    return userData.email && userData.fullName && userData.phone && userData.passwordHash;
+}
+
+// Helper: Prepare user data for insertion
+function prepareUserData(userData) {
+    return {
+        email: userData.email,
+        full_name: userData.fullName,
+        phone: userData.phone,
+        password_hash: userData.passwordHash,
+        created_at: new Date().toISOString()
+    };
+}
+
 // Helper: Create new user
 async function createUser(userData) {
     try {
         const supabase = getSupabaseClient();
         
-        // Validate required fields
-        if (!userData.email || !userData.fullName || !userData.phone || !userData.passwordHash) {
+        if (!validateUserFields(userData)) {
             throw new Error('Missing required user data fields');
         }
         
+        const insertData = prepareUserData(userData);
         const { data, error } = await supabase
             .from('users')
-            .insert([{
-                email: userData.email,
-                full_name: userData.fullName,
-                phone: userData.phone,
-                password_hash: userData.passwordHash,
-                created_at: new Date().toISOString()
-            }])
+            .insert([insertData])
             .select()
             .single();
         
