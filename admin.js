@@ -525,23 +525,84 @@ function displayUsersTable(users, domainWarning) {
     document.getElementById('usersTable').innerHTML = tableHTML;
 }
 
-// Load orders data
+// Helper: Show orders error state
+function showOrdersError(message, error) {
+    document.getElementById('ordersTable').innerHTML = `
+        <div class="empty-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>${message}</p>
+            <small>${error}</small>
+        </div>`;
+}
+
+// Helper: Show empty orders state
+function showEmptyOrders() {
+    document.getElementById('ordersTable').innerHTML = 
+        '<div class="empty-state"><i class="fas fa-shopping-cart"></i><p>No orders yet</p></div>';
+}
+
+// Helper: Create order row HTML
+function createOrderRow(order) {
+    return `
+        <tr>
+            <td><strong>${order.id.substring(0, 8)}</strong></td>
+            <td>${order.user_email || 'N/A'}</td>
+            <td>${order.network || 'N/A'}</td>
+            <td>${order.data_type || 'N/A'}</td>
+            <td>${order.beneficiary_number}</td>
+            <td>GH₵${order.price}</td>
+            <td><span class="status-badge status-${order.status.toLowerCase()}">${order.status}</span></td>
+            <td>${new Date(order.created_at).toLocaleString()}</td>
+            <td>
+                <select onchange="updateOrderStatus('${order.id}', this.value)" class="status-select">
+                    <option value="">Change Status</option>
+                    <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
+                    <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>Processing</option>
+                    <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
+                    <option value="failed" ${order.status === 'failed' ? 'selected' : ''}>Failed</option>
+                </select>
+            </td>
+        </tr>`;
+}
+
+// Helper: Render orders table
+function renderOrdersTable(orders) {
+    const tableHTML = `
+        <div class="data-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Network</th>
+                        <th>Data Type</th>
+                        <th>Phone</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${orders.map(createOrderRow).join('')}
+                </tbody>
+            </table>
+        </div>`;
+    
+    document.getElementById('ordersTable').innerHTML = tableHTML;
+}
+
+// Load orders data (refactored)
 async function loadOrdersData() {
     console.log('📦 Loading orders data from Supabase...');
     
     try {
-        // Fetch orders from Supabase via admin API
         const response = await fetch(`${API_URL}/admin?action=getAllOrders`);
         const result = await response.json();
         
         if (!result.success) {
             console.error('❌ Error loading orders:', result.error);
-            document.getElementById('ordersTable').innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <p>Error loading orders from Supabase</p>
-                    <small>${result.error}</small>
-                </div>`;
+            showOrdersError('Error loading orders from Supabase', result.error);
             return;
         }
         
@@ -549,60 +610,17 @@ async function loadOrdersData() {
         console.log('📦 Supabase orders found:', allOrders.length);
         
         if (allOrders.length === 0) {
-            document.getElementById('ordersTable').innerHTML = '<div class="empty-state"><i class="fas fa-shopping-cart"></i><p>No orders yet</p></div>';
+            showEmptyOrders();
             return;
         }
         
-        const tableHTML = `
-            <div class="data-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Customer</th>
-                            <th>Network</th>
-                            <th>Data Type</th>
-                            <th>Phone</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${allOrders.map(order => `
-                            <tr>
-                                <td><strong>${order.id.substring(0, 8)}</strong></td>
-                                <td>${order.user_email || 'N/A'}</td>
-                                <td>${order.network || 'N/A'}</td>
-                                <td>${order.data_type || 'N/A'}</td>
-                                <td>${order.beneficiary_number}</td>
-                                <td>GH₵${order.price}</td>
-                                <td><span class="status-badge status-${order.status.toLowerCase()}">${order.status}</span></td>
-                                <td>${new Date(order.created_at).toLocaleString()}</td>
-                                <td>
-                                    <select onchange="updateOrderStatus('${order.id}', this.value)" class="status-select">
-                                        <option value="">Change Status</option>
-                                        <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
-                                        <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>Processing</option>
-                                        <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
-                                        <option value="failed" ${order.status === 'failed' ? 'selected' : ''}>Failed</option>
-                                    </select>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-        
-        document.getElementById('ordersTable').innerHTML = tableHTML;
+        renderOrdersTable(allOrders);
         
     } catch (error) {
         console.error('❌ Error loading orders:', error);
-        document.getElementById('ordersTable').innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-exclamation-triangle"></i>
+        showOrdersError('Error loading orders', error.message);
+    }
+}
                 <p>Error loading orders</p>
                 <small>${error.message}</small>
             </div>`;
