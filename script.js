@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
     checkPasswordResetToken();
     initializeFavorites();
     initializeWhatsAppSupport();
-    initializeMobileMenu();
     checkWelcomeBack();
 });
 
@@ -70,114 +69,6 @@ function checkWelcomeBack() {
 window.addEventListener('beforeunload', function() {
     localStorage.setItem('lastVisitTime', Date.now().toString());
 });
-
-// Mobile Menu Toggle
-function initializeMobileMenu() {
-    const menuToggle = document.getElementById('mobileMenuToggle');
-    const mobileNav = document.getElementById('mobileNav');
-    const mobileOverlay = document.getElementById('mobileOverlay');
-    const navLinks = document.querySelectorAll('.nav-link');
-    
-    console.log('🔧 Initializing mobile menu...');
-    console.log('Menu toggle:', menuToggle);
-    console.log('Mobile nav:', mobileNav);
-    console.log('Mobile overlay:', mobileOverlay);
-    
-    if (!menuToggle) {
-        console.error('❌ Mobile menu toggle button not found!');
-        return;
-    }
-    
-    if (!mobileNav) {
-        console.error('❌ Mobile nav element not found!');
-        return;
-    }
-    
-    if (!mobileOverlay) {
-        console.error('❌ Mobile overlay element not found!');
-        return;
-    }
-    
-    menuToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('📱 Menu toggle clicked!');
-        
-        const icon = this.querySelector('i');
-        mobileNav.classList.toggle('active');
-        mobileOverlay.classList.toggle('active');
-        
-        console.log('Nav active:', mobileNav.classList.contains('active'));
-        
-        // Toggle icon
-        if (mobileNav.classList.contains('active')) {
-            icon.classList.remove('fa-bars');
-            icon.classList.add('fa-times');
-        } else {
-            icon.classList.remove('fa-times');
-            icon.classList.add('fa-bars');
-        }
-    });
-    
-    // Close menu when overlay is clicked
-    mobileOverlay.addEventListener('click', function() {
-        console.log('📱 Overlay clicked - closing menu');
-        toggleMobileMenu();
-    });
-    
-    // Close menu when nav link is clicked
-    navLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            if (window.innerWidth <= 768) {
-                console.log('📱 Nav link clicked - closing menu');
-                toggleMobileMenu();
-            }
-        });
-    });
-    
-    console.log('✅ Mobile menu initialized successfully');
-}
-
-// Standalone toggle function for inline onclick
-function toggleMobileMenu(event) {
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-    
-    console.log('🔥 Toggle function called directly!');
-    
-    const mobileNav = document.getElementById('mobileNav');
-    const mobileOverlay = document.getElementById('mobileOverlay');
-    const menuToggle = document.getElementById('mobileMenuToggle');
-    
-    if (!mobileNav || !mobileOverlay || !menuToggle) {
-        console.error('❌ Elements not found in toggle function');
-        return;
-    }
-    
-    const icon = menuToggle.querySelector('i');
-    const isActive = mobileNav.classList.contains('active');
-    
-    console.log('Current state:', isActive ? 'OPEN' : 'CLOSED');
-    
-    if (isActive) {
-        // Close menu
-        mobileNav.classList.remove('active');
-        mobileOverlay.classList.remove('active');
-        icon.classList.remove('fa-times');
-        icon.classList.add('fa-bars');
-        console.log('✅ Menu CLOSED');
-    } else {
-        // Open menu
-        mobileNav.classList.add('active');
-        mobileOverlay.classList.add('active');
-        icon.classList.remove('fa-bars');
-        icon.classList.add('fa-times');
-        console.log('✅ Menu OPENED');
-    }
-}
-
 // Modal functionality
 function initializeModal() {
     const modal = document.getElementById('noticeModal');
@@ -441,11 +332,10 @@ function initializeAuth() {
 
 // Check if user is logged in
 function checkUserLogin() {
-    const currentUser = localStorage.getItem('currentUser');
+    const currentUser = getCurrentUser();
     
     if (currentUser) {
-        const user = JSON.parse(currentUser);
-        updateHeaderForLoggedInUser(user);
+        updateHeaderForLoggedInUser(currentUser);
         showServicesSection();
     } else {
         hideServicesSection();
@@ -469,7 +359,7 @@ function hideServicesSection() {
         overlay.style.cssText = `
             position: relative;
             text-align: center;
-            margin: -50px auto 50px;
+            margin: -20px auto 50px;
             z-index: 10;
         `;
         overlay.innerHTML = `
