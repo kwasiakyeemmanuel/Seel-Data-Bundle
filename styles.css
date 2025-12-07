@@ -1729,6 +1729,16 @@ body {
     background: var(--white);
     transition: all 0.3s ease;
     font-family: inherit;
+    box-sizing: border-box;
+}
+
+/* Ensure email and phone inputs are identical */
+.form-group input[type="email"],
+.form-group input[type="tel"] {
+    padding: 12px 16px;
+    font-size: 15px;
+    height: auto;
+    box-sizing: border-box;
 }
 
 .form-group input:focus,
