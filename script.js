@@ -1317,6 +1317,7 @@ function showForgotPasswordModal() {
                             id="resetEmail" 
                             name="email" 
                             placeholder="Enter your registered email" 
+                            autocomplete="email"
                             required
                         >
                     </div>
@@ -1784,6 +1785,7 @@ function showPurchaseModal(serviceName) {
                             name="phoneNumber" 
                             placeholder="e.g., 0241234567" 
                             pattern="0[0-9]{9}"
+                            autocomplete="tel"
                             required
                         >
                         <small>Enter the number to receive the bundle</small>
@@ -1822,6 +1824,7 @@ function showPurchaseModal(serviceName) {
                             name="email" 
                             placeholder="your@email.com"
                             value="${userEmail}"
+                            autocomplete="email"
                             readonly
                             required
                         >
