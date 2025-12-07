@@ -1998,6 +1998,15 @@ function handlePurchase(event) {
             
             console.log('Opening Paystack iframe...');
             handler.openIframe();
+            
+            // Add title to Paystack iframe for accessibility
+            setTimeout(() => {
+                const paystackIframe = document.querySelector('iframe[name^="paystack-checkout"]');
+                if (paystackIframe && !paystackIframe.title) {
+                    paystackIframe.setAttribute('title', 'Paystack Payment Gateway');
+                }
+            }, 100);
+            
             clearTimeout(timeoutId); // Clear timeout since Paystack opened successfully
     } catch (error) {
         console.error('Error initializing Paystack:', error);
