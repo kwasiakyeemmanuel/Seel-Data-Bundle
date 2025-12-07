@@ -2203,6 +2203,7 @@ function initializeFavorites() {
         if (serviceName) {
             const favoriteBtn = document.createElement('button');
             favoriteBtn.className = 'favorite-btn';
+            favoriteBtn.setAttribute('aria-label', `Add ${serviceName} to favorites`);
             favoriteBtn.innerHTML = '<i class="far fa-heart"></i>';
             favoriteBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -2216,6 +2217,7 @@ function initializeFavorites() {
             if (favorites.includes(serviceName)) {
                 favoriteBtn.classList.add('favorited');
                 favoriteBtn.innerHTML = '<i class="fas fa-heart"></i>';
+                favoriteBtn.setAttribute('aria-label', `Remove ${serviceName} from favorites`);
             }
         }
     });
@@ -2236,11 +2238,13 @@ function toggleFavorite(serviceName, btn) {
         favorites.splice(index, 1);
         btn.classList.remove('favorited');
         btn.innerHTML = '<i class=\"far fa-heart\"></i>';
+        btn.setAttribute('aria-label', `Add ${serviceName} to favorites`);
         toast.info('Removed from favorites');
     } else {
         favorites.push(serviceName);
         btn.classList.add('favorited');
         btn.innerHTML = '<i class=\"fas fa-heart\"></i>';
+        btn.setAttribute('aria-label', `Remove ${serviceName} from favorites`);
         toast.success('Added to favorites!');
     }
     
