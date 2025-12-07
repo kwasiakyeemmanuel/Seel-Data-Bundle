@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkPasswordResetToken();
     initializeFavorites();
     initializeWhatsAppSupport();
+    initializeMobileMenu();
     checkWelcomeBack();
 });
 
@@ -69,6 +70,41 @@ function checkWelcomeBack() {
 window.addEventListener('beforeunload', function() {
     localStorage.setItem('lastVisitTime', Date.now().toString());
 });
+// Mobile Menu Handler
+function initializeMobileMenu() {
+    const hamburger = document.getElementById('hamburger');
+    const mobileNav = document.getElementById('mobileNav');
+    const mobileOverlay = document.getElementById('mobileOverlay');
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    if (!hamburger || !mobileNav || !mobileOverlay) return;
+    
+    // Toggle menu
+    hamburger.addEventListener('click', function() {
+        this.classList.toggle('active');
+        mobileNav.classList.toggle('active');
+        mobileOverlay.classList.toggle('active');
+    });
+    
+    // Close on overlay click
+    mobileOverlay.addEventListener('click', function() {
+        hamburger.classList.remove('active');
+        mobileNav.classList.remove('active');
+        mobileOverlay.classList.remove('active');
+    });
+    
+    // Close on nav link click
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                hamburger.classList.remove('active');
+                mobileNav.classList.remove('active');
+                mobileOverlay.classList.remove('active');
+            }
+        });
+    });
+}
+
 // Modal functionality
 function initializeModal() {
     const modal = document.getElementById('noticeModal');
