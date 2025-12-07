@@ -569,6 +569,7 @@ function showLoginModal() {
                             id="loginEmail" 
                             name="email" 
                             placeholder="Enter your email or phone" 
+                            autocomplete="username"
                             required
                         >
                     </div>
@@ -582,6 +583,7 @@ function showLoginModal() {
                             id="loginPassword" 
                             name="password" 
                             placeholder="Enter your password" 
+                            autocomplete="current-password"
                             required
                         >
                     </div>
@@ -816,6 +818,7 @@ function showSignupModal() {
                             name="name" 
                             placeholder="Enter your full name" 
                             maxlength="25"
+                            autocomplete="name"
                             required
                         >
                     </div>
@@ -829,6 +832,7 @@ function showSignupModal() {
                             id="signupEmail" 
                             name="email" 
                             placeholder="your@email.com" 
+                            autocomplete="email"
                             required
                         >
                     </div>
@@ -860,6 +864,7 @@ function showSignupModal() {
                             name="password" 
                             placeholder="Create a password" 
                             minlength="8"
+                            autocomplete="new-password"
                             required
                         >
                         <small>Must be at least 8 characters with letters, numbers, and symbols</small>
@@ -876,6 +881,7 @@ function showSignupModal() {
                             name="confirmPassword" 
                             placeholder="Confirm your password" 
                             minlength="8"
+                            autocomplete="new-password"
                             required
                         >
                     </div>
