@@ -578,14 +578,20 @@ function showLoginModal() {
                         <label for="loginPassword">
                             <i class="fas fa-lock"></i> Password *
                         </label>
-                        <input 
-                            type="password" 
-                            id="loginPassword" 
-                            name="password" 
-                            placeholder="Enter your password" 
-                            autocomplete="current-password"
-                            required
-                        >
+                        <div style="position: relative;">
+                            <input 
+                                type="password" 
+                                id="loginPassword" 
+                                name="password" 
+                                placeholder="Enter your password" 
+                                autocomplete="current-password"
+                                required
+                                style="padding-right: 45px;"
+                            >
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Toggle password visibility">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div style="text-align: right; margin-bottom: 15px;">
@@ -627,6 +633,22 @@ function closeLoginModal() {
 }
 
 // Handle login
+// Toggle password visibility
+function togglePasswordVisibility(inputId, button) {
+    const input = document.getElementById(inputId);
+    const icon = button.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
 function handleLogin(event) {
     event.preventDefault();
     
@@ -858,15 +880,21 @@ function showSignupModal() {
                         <label for="signupPassword">
                             <i class="fas fa-lock"></i> Password *
                         </label>
-                        <input 
-                            type="password" 
-                            id="signupPassword" 
-                            name="password" 
-                            placeholder="Create a password" 
-                            minlength="8"
-                            autocomplete="new-password"
-                            required
-                        >
+                        <div style="position: relative;">
+                            <input 
+                                type="password" 
+                                id="signupPassword" 
+                                name="password" 
+                                placeholder="Create a password" 
+                                minlength="8"
+                                autocomplete="new-password"
+                                required
+                                style="padding-right: 45px;"
+                            >
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('signupPassword', this)" aria-label="Toggle password visibility">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         <small>Must be at least 8 characters with letters, numbers, and symbols</small>
                         <div id="passwordStrength" style="margin-top: 8px; display: none;"></div>
                     </div>
@@ -875,15 +903,21 @@ function showSignupModal() {
                         <label for="signupConfirmPassword">
                             <i class="fas fa-lock"></i> Confirm Password *
                         </label>
-                        <input 
-                            type="password" 
-                            id="signupConfirmPassword" 
-                            name="confirmPassword" 
-                            placeholder="Confirm your password" 
-                            minlength="8"
-                            autocomplete="new-password"
-                            required
-                        >
+                        <div style="position: relative;">
+                            <input 
+                                type="password" 
+                                id="signupConfirmPassword" 
+                                name="confirmPassword" 
+                                placeholder="Confirm your password" 
+                                minlength="8"
+                                autocomplete="new-password"
+                                required
+                                style="padding-right: 45px;"
+                            >
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('signupConfirmPassword', this)" aria-label="Toggle password visibility">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="form-actions">
