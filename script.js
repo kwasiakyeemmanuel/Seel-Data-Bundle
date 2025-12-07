@@ -14,25 +14,36 @@ document.addEventListener('DOMContentLoaded', function() {
     checkWelcomeBack();
 });
 
-// Helper function to get current user with decryption support
-function getCurrentUser() {
+// Helper function to get current user from Supabase Auth
+async function getCurrentUser() {
     try {
-        const data = localStorage.getItem('currentUser');
-        if (!data) return null;
+        const { data: { user }, error } = await supabase.auth.getUser();
         
-        // Try to parse as plain JSON first
-        try {
-            return JSON.parse(data);
-        } catch (parseError) {
-            // If plain JSON fails, try decryption (for encrypted data)
-            if (window.Security && typeof window.Security.decryptData === 'function') {
-                const decryptedData = window.Security.decryptData(data);
-                if (decryptedData) {
-                    return decryptedData;
-                }
-            }
+        if (error || !user) {
             return null;
         }
+        
+        // Fetch user profile from database
+        const { data: userProfile, error: profileError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('auth_id', user.id)
+            .single();
+        
+        if (profileError || !userProfile) {
+            console.error('Error fetching user profile:', profileError);
+            return null;
+        }
+        
+        // Return combined user data
+        return {
+            id: userProfile.id,
+            auth_id: user.id,
+            name: userProfile.name,
+            email: userProfile.email,
+            phone: userProfile.phone,
+            createdAt: userProfile.created_at
+        };
     } catch (error) {
         console.error('Error getting current user:', error);
         return null;
@@ -40,7 +51,7 @@ function getCurrentUser() {
 }
 
 // Check if user is returning after 3+ minutes
-function checkWelcomeBack() {
+async function checkWelcomeBack() {
     const lastVisit = localStorage.getItem('lastVisitTime');
     const currentTime = Date.now();
     const threeMinutes = 3 * 60 * 1000; // 3 minutes in milliseconds
@@ -50,7 +61,7 @@ function checkWelcomeBack() {
         
         if (timeDifference > threeMinutes) {
             // User has been away for more than 3 minutes
-            const currentUser = getCurrentUser();
+            const currentUser = await getCurrentUser();
             
             setTimeout(() => {
                 if (currentUser) {
@@ -367,8 +378,8 @@ function initializeAuth() {
 }
 
 // Check if user is logged in
-function checkUserLogin() {
-    const currentUser = getCurrentUser();
+async function checkUserLogin() {
+    const currentUser = await getCurrentUser();
     
     if (currentUser) {
         updateHeaderForLoggedInUser(currentUser);
@@ -667,94 +678,71 @@ function handleLogin(event) {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
     submitBtn.disabled = true;
     
-    // Login via backend API
+    // Login via Supabase Auth
     setTimeout(async () => {
-        console.log('🔐 LOGIN: Authenticating via backend...');
+        console.log('🔐 LOGIN: Authenticating via Supabase Auth...');
         console.log('📧 Email:', email);
         
         try {
-            // Call backend login API
-            console.log('📡 Sending login request to /api/users...');
-            
-            // Create abort controller for timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => {
-                console.error('⏱️ Request timeout after 30 seconds');
-                controller.abort();
-            }, 30000);
-            
-            const response = await fetch('/api/users', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    action: 'login',
-                    email: email,
-                    password: password
-                }),
-                signal: controller.signal
-            }).catch(fetchError => {
-                console.error('❌ Fetch failed:', fetchError);
-                throw fetchError;
+            // Sign in with Supabase Auth
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password
             });
             
-            clearTimeout(timeoutId);
-            
-            console.log('📥 Login response status:', response.status);
-            console.log('📥 Login response ok:', response.ok);
-            
-            // Check if response is JSON
-            const contentType = response.headers.get('content-type');
-            console.log('📥 Login Content-Type:', contentType);
-            
-            if (!contentType || !contentType.includes('application/json')) {
-                const text = await response.text();
-                console.error('❌ Non-JSON login response:', text.substring(0, 500));
-                console.error('❌ Full response headers:', Array.from(response.headers.entries()));
-                throw new Error('Server error: Invalid response format. Please try again.');
-            }
-            
-            const result = await response.json();
-            console.log('📥 Login result:', result);
-            
-            if (!response.ok || !result.success) {
+            if (authError) {
+                console.error('❌ Auth error:', authError);
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
-                toast.error(result.error || 'Invalid email or password');
+                
+                let errorMessage = 'Invalid email or password';
+                if (authError.message.includes('Invalid login credentials')) {
+                    errorMessage = 'Invalid email or password';
+                } else if (authError.message.includes('Email not confirmed')) {
+                    errorMessage = 'Please verify your email before logging in';
+                } else {
+                    errorMessage = authError.message;
+                }
+                
+                toast.error(errorMessage);
                 return;
             }
             
-            console.log('✅ Login successful!');
-            const user = result.user;
+            if (!authData.user || !authData.session) {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                toast.error('Login failed. Please try again.');
+                return;
+            }
             
-            // Store user session
-            const sessionUser = {
-                id: user.id,
-                name: user.fullName,
-                email: user.email,
-                phone: user.phone,
-                createdAt: user.createdAt
-            };
-            localStorage.setItem('currentUser', JSON.stringify(sessionUser));
+            console.log('✅ Supabase Auth login successful:', authData.user.id);
+            console.log('✅ Session established');
             
+            // Fetch user profile from database
+            const { data: userProfile, error: profileError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('auth_id', authData.user.id)
+                .single();
+            
+            if (profileError) {
+                console.error('❌ Profile fetch error:', profileError);
+                // If profile doesn't exist, sign out and show error
+                await supabase.auth.signOut();
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                toast.error('User profile not found. Please contact support.');
+                return;
+            }
+            
+            console.log('✅ User profile fetched');
             console.log('✅ User authenticated!');
             
         } catch (error) {
             console.error('❌ Login error:', error);
-            console.error('❌ Error name:', error.name);
-            console.error('❌ Error stack:', error.stack);
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
-            
-            // Handle specific error types
-            if (error.name === 'AbortError') {
-                toast.error('Request timeout. Please check your connection and try again.', 5000);
-            } else if (error.message && error.message.includes('Failed to fetch')) {
-                toast.error('Network error. Please check your internet connection.', 5000);
-            } else {
-                toast.error(error.message || 'Login failed. Please try again.');
-            }
+            toast.error(error.message || 'Login failed. Please try again.');
             return;
         }
         
@@ -778,7 +766,7 @@ function handleLogin(event) {
         }
         
         // Close modal and update UI
-        const user = JSON.parse(localStorage.getItem('currentUser'));
+        const user = await getCurrentUser();
         closeLoginModal();
         updateHeaderForLoggedInUser(user);
         showServicesSection();
@@ -1020,89 +1008,73 @@ function handleSignup(event) {
         return;
     }
     
-    // Create account via backend API
+    // Create account via Supabase Auth
     setTimeout(async () => {
-        console.log('🔐 SIGNUP: Creating account via backend...');
+        console.log('🔐 SIGNUP: Creating account via Supabase Auth...');
         console.log('📧 Email:', userData.email);
         console.log('📱 Phone:', userData.phone);
         console.log('👤 Name:', userData.name);
-        console.log('📱 Device:', /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop');
         
         try {
-            // Call backend signup API with timeout for mobile networks
-            console.log('📡 Sending request to /api/users...');
-            
-            // Create abort controller for timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-            
-            const response = await fetch('/api/users', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    action: 'signup',
-                    email: userData.email,
-                    fullName: userData.name,
-                    phone: userData.phone,
-                    password: password
-                }),
-                signal: controller.signal
+            // Sign up with Supabase Auth
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email: userData.email,
+                password: password,
+                options: {
+                    data: {
+                        name: userData.name,
+                        phone: userData.phone
+                    }
+                }
             });
             
-            clearTimeout(timeoutId);
-            
-            console.log('📥 Response status:', response.status);
-            console.log('📥 Response ok:', response.ok);
-            
-            // Check if response is JSON
-            const contentType = response.headers.get('content-type');
-            console.log('📥 Content-Type:', contentType);
-            
-            if (!contentType || !contentType.includes('application/json')) {
-                const text = await response.text();
-                console.error('❌ Non-JSON response received:', text.substring(0, 300));
-                throw new Error('Server error: Invalid response format. Please check your internet connection and try again.');
+            if (authError) {
+                console.error('❌ Auth error:', authError);
+                throw new Error(authError.message);
             }
             
-            const result = await response.json();
-            console.log('📥 Response data:', result);
-            
-            if (!response.ok || !result.success) {
-                if (response.status === 409) {
-                    throw new Error('Account already exists with this email or phone');
-                }
-                throw new Error(result.error || 'Signup failed. Please try again.');
+            if (!authData.user) {
+                throw new Error('Signup failed. Please try again.');
             }
             
+            console.log('✅ Supabase Auth user created:', authData.user.id);
+            
+            // Create user profile in users table
+            const { data: userData, error: dbError } = await supabase
+                .from('users')
+                .insert([{
+                    auth_id: authData.user.id,
+                    name: userData.name,
+                    email: userData.email,
+                    phone: userData.phone,
+                    created_at: new Date().toISOString()
+                }])
+                .select()
+                .single();
+            
+            if (dbError) {
+                console.error('❌ Database error:', dbError);
+                // Clean up auth user if profile creation fails
+                await supabase.auth.signOut();
+                throw new Error('Failed to create user profile. Please try again.');
+            }
+            
+            console.log('✅ User profile created in database');
             console.log('✅ Account created successfully!');
-            const newUser = result.user;
             
-            // Store user session in localStorage
-            const sessionUser = {
-                id: newUser.id,
-                name: newUser.fullName || newUser.full_name,
-                email: newUser.email,
-                phone: newUser.phone,
-                createdAt: newUser.createdAt || newUser.created_at
-            };
-            localStorage.setItem('currentUser', JSON.stringify(sessionUser));
-            
-            console.log('✅ User session saved!');
         } catch (error) {
             console.error('❌ Signup error:', error);
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
             
-            // Handle specific error types
-            if (error.name === 'AbortError') {
-                toast.error('Request timeout. Please check your internet connection and try again.', 5000);
-            } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                toast.error('Network error. Please check your internet connection and try again.', 5000);
-            } else {
-                toast.error(error.message || 'Failed to create account. Please try again.', 5000);
+            let errorMessage = 'Failed to create account. Please try again.';
+            if (error.message.includes('already registered')) {
+                errorMessage = 'An account with this email already exists.';
+            } else if (error.message) {
+                errorMessage = error.message;
             }
+            
+            toast.error(errorMessage, 5000);
             return;
         }
         
@@ -1154,19 +1126,34 @@ function closeSignupSuccessModal() {
 }
 
 // Handle logout
-function handleLogout() {
-    // Clear user data
-    localStorage.removeItem('currentUser');
-    sessionStorage.removeItem('isNewUser');
-    sessionStorage.removeItem('signupTime');
-    
-    // Redirect to home page instead of reloading (faster)
-    window.location.href = 'index.html';
+async function handleLogout() {
+    try {
+        // Sign out from Supabase Auth
+        const { error } = await supabase.auth.signOut();
+        
+        if (error) {
+            console.error('Logout error:', error);
+            toast.error('Failed to logout. Please try again.');
+            return;
+        }
+        
+        console.log('✅ User logged out successfully');
+        
+        // Clear session data
+        sessionStorage.removeItem('isNewUser');
+        sessionStorage.removeItem('signupTime');
+        
+        // Redirect to home page
+        window.location.href = 'index.html';
+    } catch (error) {
+        console.error('Logout error:', error);
+        toast.error('Failed to logout. Please try again.');
+    }
 }
 
 // Show delete account modal
-function showDeleteAccountModal() {
-    const currentUser = getCurrentUser();
+async function showDeleteAccountModal() {
+    const currentUser = await getCurrentUser();
     if (!currentUser) {
         toast.error('Please login to delete your account');
         return;
