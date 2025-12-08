@@ -546,7 +546,6 @@ document.addEventListener('click', function(event) {
         dropdown.classList.remove('show');
     }
 });
-
 // Show login modal
 function showLoginModal() {
     const modal = document.createElement('div');
