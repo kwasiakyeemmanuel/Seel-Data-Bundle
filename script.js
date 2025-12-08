@@ -3719,6 +3719,7 @@ function viewTicketDetails(ticketId) {
 }
 
 // Check for email verification token on page load
+
 window.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const verifyToken = urlParams.get('verify');
