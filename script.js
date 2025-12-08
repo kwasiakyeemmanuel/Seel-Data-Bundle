@@ -1045,28 +1045,9 @@ function handleSignup(event) {
             
             console.log('✅ Supabase Auth user created:', authData.user.id);
             
-            // Create user profile in users table
-            const { data: userProfile, error: dbError } = await supabase
-                .from('users')
-                .insert([{
-                    auth_id: authData.user.id,
-                    full_name: userData.name,
-                    email: userData.email,
-                    phone: userData.phone,
-                    created_at: new Date().toISOString()
-                }])
-                .select()
-                .single();
-            
-            if (dbError) {
-                console.error('❌ Database error:', dbError);
-                // Clean up auth user if profile creation fails
-                await supabase.auth.signOut();
-                throw new Error('Failed to create user profile. Please try again.');
-            }
-            
-            console.log('✅ User profile created in database');
+            // Profile will be created automatically by database trigger after email confirmation
             console.log('✅ Account created successfully!');
+            console.log('📧 Check your email to verify your account');
             
         } catch (error) {
             console.error('❌ Signup error:', error);
