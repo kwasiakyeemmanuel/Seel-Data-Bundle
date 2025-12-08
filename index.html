@@ -10,6 +10,16 @@
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     
+    <!-- Maintenance Mode Check -->
+    <script>
+        // Set to true to enable maintenance mode, false to disable
+        const MAINTENANCE_MODE = false;
+        
+        if (MAINTENANCE_MODE && !window.location.pathname.includes('maintenance.html')) {
+            window.location.href = 'maintenance.html';
+        }
+    </script>
+    
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://seeldatabundle.me/">
