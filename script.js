@@ -1046,7 +1046,7 @@ function handleSignup(event) {
             console.log('✅ Supabase Auth user created:', authData.user.id);
             
             // Create user profile in users table
-            const { data: userData, error: dbError } = await supabase
+            const { data: userProfile, error: dbError } = await supabase
                 .from('users')
                 .insert([{
                     auth_id: authData.user.id,
