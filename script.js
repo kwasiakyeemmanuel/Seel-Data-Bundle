@@ -141,66 +141,53 @@ function initializeModal() {
     }
     
     // Close modal function
-    function closeModal() {
-        console.log('Closing modal...');
-        modal.style.display = 'none';
-        localStorage.setItem('seenNoticeModal', 'true');
-    }
-    
-    // Close on button click
-    understoodBtn.addEventListener('click', function(e) {
-        console.log('Button clicked');
-        e.preventDefault();
-        e.stopPropagation();
-        closeModal();
-    });
-    
-    // Close on clicking the modal background (not the content)
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            closeModal();
+    async function showPurchaseModal(serviceName) {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+            showAuthRequiredModal();
+            return;
         }
-    });
-}
-
-// Dynamic greeting based on time
-function initializeGreeting() {
-    const greetingElement = document.getElementById('greeting');
-    const hour = new Date().getHours();
-    
-    let greeting;
-    let icon;
-    
-    if (hour >= 5 && hour < 12) {
-        greeting = 'Good Morning!';
-        icon = 'fa-sun';
-    } else if (hour >= 12 && hour < 17) {
-        greeting = 'Good Afternoon!';
-        icon = 'fa-cloud-sun';
-    } else if (hour >= 17 && hour < 21) {
-        greeting = 'Good Evening!';
-        icon = 'fa-cloud-moon';
-    } else {
-        greeting = 'Good Night!';
-        icon = 'fa-moon';
+        const userEmail = currentUser.email || '';
+        // ...existing code...
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'purchaseModal';
+        // Define bundle options based on service
+        let bundleOptions = '';
+        if (serviceName === 'MTN Data Bundle') {
+            bundleOptions = `
+                <option value="">Choose bundle size...</option>
+                <option value="1GB - GH₵6.50">1GB - GH₵6.50</option>
+                <option value="2GB - GH₵12.50">2GB - GH₵12.50</option>
+                <option value="3GB - GH₵18.50">3GB - GH₵18.50</option>
+                <option value="4GB - GH₵23.50">4GB - GH₵23.50</option>
+                <option value="5GB - GH₵28.50">5GB - GH₵28.50</option>
+                <option value="6GB - GH₵32.50">6GB - GH₵32.50</option>
+                <option value="7GB - GH₵38.50">7GB - GH₵38.50</option>
+                <option value="8GB - GH₵42.50">8GB - GH₵42.50</option>
+                <option value="10GB - GH₵48.50">10GB - GH₵48.50</option>
+                <option value="15GB - GH₵68.50">15GB - GH₵68.50</option>
+                <option value="20GB - GH₵88.50">20GB - GH₵88.50</option>
+                <option value="25GB - GH₵109.50">25GB - GH₵109.50</option>
+                <option value="30GB - GH₵129.50">30GB - GH₵129.50</option>
+                <option value="40GB - GH₵169.50">40GB - GH₵169.50</option>
+                <option value="50GB - GH₵200.50">50GB - GH₵200.50</option>
+                <option value="100GB - GH₵380.50">100GB - GH₵380.50</option>
+            `;
+        } else if (serviceName === 'Telecel Data Bundle') {
+            bundleOptions = `
+                <option value="">Choose bundle size...</option>
+                <option value="5GB - GH₵26.50">5GB - GH₵26.50</option>
+                <option value="10GB - GH₵47.50">10GB - GH₵47.50</option>
+                <option value="15GB - GH₵67.00">15GB - GH₵67.00</option>
+                <option value="20GB - GH₵86.50">20GB - GH₵86.50</option>
+                <option value="25GB - GH₵108.00">25GB - GH₵108.00</option>
+                <option value="30GB - GH₵125.50">30GB - GH₵125.50</option>
+                <option value="40GB - GH₵156.50">40GB - GH₵156.50</option>
+            `;
+        }
+        // ...existing code for modal rendering...
     }
-    
-    greetingElement.textContent = greeting;
-    const iconElement = greetingElement.previousElementSibling;
-    iconElement.className = `fas ${icon}`;
-}
-
-// Filter functionality
-function initializeFilters() {
-    const categoryFilter = document.getElementById('categoryFilter');
-    const availabilityFilter = document.getElementById('availabilityFilter');
-    const clearFiltersBtn = document.getElementById('clearFilters');
-    
-    if (!categoryFilter || !availabilityFilter || !clearFiltersBtn) {
-        console.warn('Filter elements not found');
-        return;
-    }
-    
     categoryFilter.addEventListener('change', applyFilters);
     availabilityFilter.addEventListener('change', applyFilters);
     
@@ -771,31 +758,9 @@ function handleLogin(event) {
             sessionStorage.removeItem('signupTime');
         }
         
-        // Close modal and update UI
-        const user = await getCurrentUser();
+        // Close modal and reload page to update UI and session
         closeLoginModal();
-        updateHeaderForLoggedInUser(user);
-        showServicesSection();
-                
-        // Show success message
-                const successModal = document.createElement('div');
-                successModal.className = 'modal';
-                successModal.id = 'loginSuccessModal';
-            successModal.innerHTML = `
-                <div class="modal-content success-modal">
-                    <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
-                    <div class="success-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <h2>${welcomeMessage}</h2>
-                    <p>${subMessage}</p>
-                    <button class="btn btn-primary btn-block" onclick="closeLoginSuccessModal()">
-                        Continue
-                    </button>
-                </div>
-            `;
-            document.body.appendChild(successModal);
-            successModal.style.display = 'flex';
+        window.location.reload();
     }, 800);
 }
 
@@ -1672,197 +1637,36 @@ function initializeSmoothScroll() {
 
 // Service selection
 function selectService(serviceName) {
-    // Check if user is logged in
-    const currentUser = localStorage.getItem('currentUser');
-    
-    if (!currentUser) {
-        showAuthRequiredModal();
-        return;
-    }
-    
-    // Store selected service
-    sessionStorage.setItem('selectedService', serviceName);
-    
-    // Show purchase modal
-    showPurchaseModal(serviceName);
+    // Check if user is logged in using Supabase Auth
+    getCurrentUser().then(currentUser => {
+        if (!currentUser) {
+            showAuthRequiredModal();
+            return;
+        }
+        // Store selected service
+        sessionStorage.setItem('selectedService', serviceName);
+        // Show purchase modal
+        showPurchaseModal(serviceName);
+    });
 }
 
 // Show purchase modal
 function showPurchaseModal(serviceName) {
     // Get current user email
-    const currentUser = getCurrentUser() || {};
-    const userEmail = currentUser.email || '';
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.id = 'purchaseModal';
-    
-    // Define bundle options based on service
-    let bundleOptions = '';
-    
-    if (serviceName === 'MTN Data Bundle') {
-        bundleOptions = `
-            <option value="">Choose bundle size...</option>
-            <option value="1GB - GH₵6.50">1GB - GH₵6.50</option>
-            <option value="2GB - GH₵12.50">2GB - GH₵12.50</option>
-            <option value="3GB - GH₵18.50">3GB - GH₵18.50</option>
-            <option value="4GB - GH₵23.50">4GB - GH₵23.50</option>
-            <option value="5GB - GH₵28.50">5GB - GH₵28.50</option>
-            <option value="6GB - GH₵32.50">6GB - GH₵32.50</option>
-            <option value="7GB - GH₵38.50">7GB - GH₵38.50</option>
-            <option value="8GB - GH₵42.50">8GB - GH₵42.50</option>
-            <option value="10GB - GH₵48.50">10GB - GH₵48.50</option>
-            <option value="15GB - GH₵68.50">15GB - GH₵68.50</option>
-            <option value="20GB - GH₵88.50">20GB - GH₵88.50</option>
-            <option value="25GB - GH₵109.50">25GB - GH₵109.50</option>
-            <option value="30GB - GH₵129.50">30GB - GH₵129.50</option>
-            <option value="40GB - GH₵169.50">40GB - GH₵169.50</option>
-            <option value="50GB - GH₵200.50">50GB - GH₵200.50</option>
-            <option value="100GB - GH₵380.50">100GB - GH₵380.50</option>
-        `;
-    } else if (serviceName === 'Telecel Data Bundle') {
-        bundleOptions = `
-            <option value="">Choose bundle size...</option>
-            <option value="5GB - GH₵26.50">5GB - GH₵26.50</option>
-            <option value="10GB - GH₵47.50">10GB - GH₵47.50</option>
-            <option value="15GB - GH₵67.00">15GB - GH₵67.00</option>
-            <option value="20GB - GH₵86.50">20GB - GH₵86.50</option>
-            <option value="25GB - GH₵108.00">25GB - GH₵108.00</option>
-            <option value="30GB - GH₵125.50">30GB - GH₵125.50</option>
-            <option value="40GB - GH₵156.50">40GB - GH₵156.50</option>
-            <option value="50GB - GH₵210.50">50GB - GH₵210.50</option>
-            <option value="90GB - GH₵330.00">90GB - GH₵330.00</option>
-            <option value="100GB - GH₵395.50">100GB - GH₵395.50</option>
-            <option value="190GB - GH₵400.00">190GB - GH₵400.00</option>
-        `;
-    } else {
-        // Default bundles for other services
-        bundleOptions = `
-            <option value="">Choose bundle size...</option>
-            <option value="1GB - GH₵5.00">1GB - GH₵5.00</option>
-            <option value="2GB - GH₵9.00">2GB - GH₵9.00</option>
-            <option value="5GB - GH₵20.00">5GB - GH₵20.00</option>
-            <option value="10GB - GH₵35.00">10GB - GH₵35.00</option>
-            <option value="20GB - GH₵65.00">20GB - GH₵65.00</option>
-            <option value="50GB - GH₵150.00">50GB - GH₵150.00</option>
-        `;
-    }
-    
-    modal.innerHTML = `
-        <div class="modal-content purchase-modal">
-            <div class="modal-header">
-                <i class="fas fa-shopping-cart"></i>
-                <h2>Purchase ${serviceName}</h2>
-                <button class="close-btn" onclick="closePurchaseModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="purchaseForm" onsubmit="handlePurchase(event)">
-                    <div class="form-group">
-                        <label for="phoneNumber">
-                            <i class="fas fa-phone"></i> Beneficiary Number *
-                        </label>
-                        <input 
-                            type="tel" 
-                            id="phoneNumber" 
-                            name="phoneNumber" 
-                            placeholder="e.g., 0241234567" 
-                            pattern="0[0-9]{9}"
-                            autocomplete="tel"
-                            required
-                        >
-                        <small>Enter the number to receive the bundle</small>
-                    </div>
+    getCurrentUser().then(currentUser => {
+        const userEmail = currentUser ? currentUser.email : '';
+        // ...existing code...
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'purchaseModal';
+        // Define bundle options based on service
+        let bundleOptions = '';
+        if (serviceName === 'MTN Data Bundle') {
+            bundleOptions = `
+                <option value="">Choose bundle size...</option>
+                ...existing code...
+            `;
 
-                    <div class="form-group">
-                        <label for="bundleSize">
-                            <i class="fas fa-database"></i> Select Bundle *
-                        </label>
-                        <select id="bundleSize" name="bundleSize" required>
-                            ${bundleOptions}
-                            <option value="20GB - GH₵65.00">20GB - GH₵65.00</option>
-                            <option value="50GB - GH₵150.00">50GB - GH₵150.00</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="paymentMethod">
-                            <i class="fas fa-credit-card"></i> Payment Method *
-                        </label>
-                        <select id="paymentMethod" name="paymentMethod" required>
-                            <option value="">Choose payment method...</option>
-                            <option value="momo">Mobile Money (MTN/Vodafone)</option>
-                            <option value="card">Credit/Debit Card</option>
-                            <option value="bank">Bank Transfer</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email">
-                            <i class="fas fa-envelope"></i> Email *
-                        </label>
-                        <input 
-                            type="email" 
-                            id="email" 
-                            name="email" 
-                            placeholder="your@email.com"
-                            value="${userEmail}"
-                            autocomplete="email"
-                            readonly
-                            required
-                        >
-                        <small>Email for payment confirmation and data delivery updates</small>
-                    </div>
-
-                    <div class="form-info">
-                        <i class="fas fa-shield-alt"></i>
-                        <div>
-                            <strong>Secure Payment Process:</strong><br>
-                            ✓ Pay securely with Paystack (Cards, Mobile Money, Bank Transfer)<br>
-                            ✓ Instant payment confirmation<br>
-                            ✓ Fast and reliable data delivery<br>
-                            ✓ Email confirmation sent to your inbox
-                        </div>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closePurchaseModal()">
-                            Cancel
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-check"></i> Proceed to Payment
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    modal.style.display = 'flex';
-    
-    // Explicitly set email value after modal is rendered
-    const emailInput = document.getElementById('email');
-    if (emailInput && userEmail) {
-        emailInput.value = userEmail;
-    }
-}
-
-// Close purchase modal
-function closePurchaseModal() {
-    const modal = document.getElementById('purchaseModal');
-    if (modal) {
-        modal.style.display = 'none';
-        setTimeout(() => modal.remove(), 300);
-    }
-}
-
-// Handle purchase form submission
-function handlePurchase(event) {
-    event.preventDefault();
-    
-    const formData = new FormData(event.target);
     const data = {
         service: sessionStorage.getItem('selectedService'),
         phoneNumber: formData.get('phoneNumber'),
@@ -2027,7 +1831,7 @@ async function verifyPayment(reference, orderData) {
     verifyingModal.style.display = 'flex';
     
     // Get current user
-    const currentUser = getCurrentUser() || {};
+    const currentUser = await getCurrentUser() || {};
     
     try {
         // Call backend API to verify payment and save order
