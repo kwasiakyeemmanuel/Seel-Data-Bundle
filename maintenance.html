@@ -163,26 +163,6 @@
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
-        .timer {
-            margin-top: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 12px;
-            color: white;
-        }
-
-        .timer-label {
-            font-size: 14px;
-            opacity: 0.9;
-            margin-bottom: 10px;
-        }
-
-        .timer-display {
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: 2px;
-        }
-
         .logo {
             width: 80px;
             height: 80px;
@@ -244,11 +224,6 @@
             </ul>
         </div>
 
-        <div class="timer">
-            <div class="timer-label">Estimated Time Remaining</div>
-            <div class="timer-display" id="countdown">Calculating...</div>
-        </div>
-
         <div class="contact-section">
             <p style="font-size: 14px; color: #718096; margin-bottom: 15px;">
                 <strong>Need Urgent Assistance?</strong><br>
@@ -271,29 +246,6 @@
     </div>
 
     <script>
-        // Countdown timer
-        const targetTime = new Date().getTime() + (2 * 60 * 60 * 1000); // 2 hours from now
-
-        function updateCountdown() {
-            const now = new Date().getTime();
-            const distance = targetTime - now;
-
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            document.getElementById('countdown').textContent = 
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-            if (distance < 0) {
-                document.getElementById('countdown').textContent = 'Almost Ready...';
-                clearInterval(countdownInterval);
-            }
-        }
-
-        updateCountdown();
-        const countdownInterval = setInterval(updateCountdown, 1000);
-
         // Auto-refresh every 5 minutes to check if site is back
         setTimeout(() => {
             window.location.reload();
