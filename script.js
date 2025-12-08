@@ -1043,7 +1043,7 @@ function handleSignup(event) {
         sessionStorage.setItem('isNewUser', 'true');
         sessionStorage.setItem('signupTime', Date.now().toString());
         
-        // Show success message with email verification notice
+        // Show success message and redirect to services
         const successModal = document.createElement('div');
         successModal.className = 'modal';
         successModal.id = 'signupSuccessModal';
@@ -1051,30 +1051,26 @@ function handleSignup(event) {
             <div class="modal-content success-modal">
                 <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
                 <div class="success-icon">
-                    <i class="fas fa-envelope-circle-check" style="color: var(--primary-color);"></i>
+                    <i class="fas fa-check-circle" style="color: var(--primary-color);"></i>
                 </div>
-                <h2>Check Your Email!</h2>
+                <h2>Account Created!</h2>
                 <p>Welcome to Seel Data, ${userData.name}! 🎉</p>
                 <div style="background: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; border-radius: 8px; margin: 20px 0;">
                     <p style="margin: 0; color: #1565C0; font-size: 14px;">
                         <i class="fas fa-info-circle"></i> 
-                        <strong>Verification Required</strong><br>
-                        We've sent a confirmation email to <strong>${userData.email}</strong>. 
-                        Please click the link in the email to activate your account.
+                        <strong>Your account is ready to use!</strong><br>
+                        You can now purchase bundles and access all services instantly.
                     </p>
                 </div>
-                <p style="color: #666; font-size: 13px;">
-                    Didn't receive the email? Check your spam folder or wait a few minutes.
-                </p>
-                <button class="btn btn-primary btn-block" onclick="closeSignupSuccessModal();">
-                    Got It!
+                <button class="btn btn-primary btn-block" onclick="closeSignupSuccessModal(); showServicesSection();">
+                    Go to Services
                 </button>
             </div>
         `;
         document.body.appendChild(successModal);
         successModal.style.display = 'flex';
         
-        toast.success('Account created! Please verify your email 📧', 5000);
+        toast.success('Account created! You can now use all services.', 5000);
     }, 800);
 }
 
