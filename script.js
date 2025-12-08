@@ -357,42 +357,62 @@ function closeContactSuccessModal() {
 
 // Authentication functionality
 function initializeAuth() {
-    const loginBtn = document.getElementById('loginBtn');
-    const signupBtn = document.getElementById('signupBtn');
-    console.log('initializeAuth: loginBtn=', !!loginBtn, 'signupBtn=', !!signupBtn);
-
-    // Attach handlers robustly. If elements are not yet available, retry once.
+    console.log('🔐 initializeAuth: Starting...');
+    
+    // Wait for DOM to be fully ready
     function attachHandlers() {
-        const lb = document.getElementById('loginBtn');
-        const sb = document.getElementById('signupBtn');
+        const loginBtn = document.getElementById('loginBtn');
+        const signupBtn = document.getElementById('signupBtn');
+        
+        console.log('🔐 initializeAuth: loginBtn found?', !!loginBtn);
+        console.log('🔐 initializeAuth: signupBtn found?', !!signupBtn);
 
-        if (lb) {
-            try {
-                lb.disabled = false;
-                lb.style.pointerEvents = 'auto';
-                lb.addEventListener('click', showLoginModal);
-                console.log('initializeAuth: attached click to loginBtn');
-            } catch (e) {
-                console.error('initializeAuth: failed attach loginBtn', e);
-            }
+        if (loginBtn) {
+            // Remove any existing listeners
+            const newLoginBtn = loginBtn.cloneNode(true);
+            loginBtn.parentNode.replaceChild(newLoginBtn, loginBtn);
+            
+            newLoginBtn.disabled = false;
+            newLoginBtn.style.pointerEvents = 'auto';
+            newLoginBtn.style.cursor = 'pointer';
+            newLoginBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔐 Login button clicked!');
+                showLoginModal();
+            });
+            console.log('✅ Login button handler attached');
+        } else {
+            console.warn('⚠️ Login button not found!');
         }
 
-        if (sb) {
-            try {
-                sb.disabled = false;
-                sb.style.pointerEvents = 'auto';
-                sb.addEventListener('click', showSignupModal);
-                console.log('initializeAuth: attached click to signupBtn');
-            } catch (e) {
-                console.error('initializeAuth: failed attach signupBtn', e);
-            }
+        if (signupBtn) {
+            // Remove any existing listeners
+            const newSignupBtn = signupBtn.cloneNode(true);
+            signupBtn.parentNode.replaceChild(newSignupBtn, signupBtn);
+            
+            newSignupBtn.disabled = false;
+            newSignupBtn.style.pointerEvents = 'auto';
+            newSignupBtn.style.cursor = 'pointer';
+            newSignupBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔐 Signup button clicked!');
+                showSignupModal();
+            });
+            console.log('✅ Signup button handler attached');
+        } else {
+            console.warn('⚠️ Signup button not found!');
         }
     }
 
+    // Try immediately
     attachHandlers();
-
-    // If not found immediately, try again shortly (helps when DOM changes)
-    if (!loginBtn || !signupBtn) {
+    
+    // Try again after a short delay to handle any DOM updates
+    setTimeout(attachHandlers, 500);
+    setTimeout(attachHandlers, 1000);
+}
         setTimeout(() => {
             console.log('initializeAuth: retrying attachment after timeout');
             attachHandlers();
