@@ -413,12 +413,6 @@ function initializeAuth() {
     setTimeout(attachHandlers, 500);
     setTimeout(attachHandlers, 1000);
 }
-        setTimeout(() => {
-            console.log('initializeAuth: retrying attachment after timeout');
-            attachHandlers();
-        }, 300);
-    }
-}
 
 // Check if user is logged in
 async function checkUserLogin() {
