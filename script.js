@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeMobileMenu();
     checkWelcomeBack();
 });
-
 // Helper function to get current user from Supabase Auth
 async function getCurrentUser() {
     try {
