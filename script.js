@@ -1,3 +1,9 @@
+// Initialize Supabase Client
+const SUPABASE_URL = 'https://xljpjabyctkzywfcfstd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsanBqYWJ5Y3Rrenl3ZmNmc3RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM0MTQxNjAsImV4cCI6MjA0ODk5MDE2MH0.hFnb3yOKZhWfqp_Xww9w9QkvWyqGa_o2-R9MBVnV8Pk';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     initializeModal();
