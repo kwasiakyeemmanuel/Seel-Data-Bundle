@@ -717,6 +717,11 @@ function handleLogin(event) {
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
                 
+                // Track failed login attempt for DoS protection
+                if (window.DOSProtection) {
+                    window.DOSProtection.trackFailedLogin();
+                }
+                
                 let errorMessage = 'Invalid email or password';
                 if (authError.message.includes('Invalid login credentials')) {
                     errorMessage = 'Invalid email or password';
@@ -733,6 +738,12 @@ function handleLogin(event) {
             if (!authData.user || !authData.session) {
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
+                
+                // Track failed login attempt for DoS protection
+                if (window.DOSProtection) {
+                    window.DOSProtection.trackFailedLogin();
+                }
+                
                 toast.error('Login failed. Please try again.');
                 return;
             }
