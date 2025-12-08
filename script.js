@@ -45,7 +45,7 @@ async function getCurrentUser() {
         return {
             id: userProfile.id,
             auth_id: user.id,
-            name: userProfile.name,
+            name: userProfile.full_name,
             email: userProfile.email,
             phone: userProfile.phone,
             createdAt: userProfile.created_at
@@ -1050,7 +1050,7 @@ function handleSignup(event) {
                 .from('users')
                 .insert([{
                     auth_id: authData.user.id,
-                    name: userData.name,
+                    full_name: userData.name,
                     email: userData.email,
                     phone: userData.phone,
                     created_at: new Date().toISOString()
