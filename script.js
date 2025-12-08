@@ -1942,10 +1942,21 @@ async function verifyPayment(reference, orderData) {
             showSuccessModal(orderData, reference);
         } else {
             toast.error('Payment verification failed. Please contact support.');
+            
+            // Track failed payment for DoS protection
+            if (window.DOSProtection) {
+                window.DOSProtection.trackFailedPayment();
+            }
         }
     } catch (error) {
         console.error('Verification error:', error);
         verifyingModal.remove();
+        
+        // Track failed payment for DoS protection
+        if (window.DOSProtection) {
+            window.DOSProtection.trackFailedPayment();
+        }
+        
         toast.error('Error verifying payment. Please contact support with reference: ' + reference);
     }
 }
