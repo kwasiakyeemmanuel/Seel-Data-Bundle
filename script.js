@@ -359,13 +359,44 @@ function closeContactSuccessModal() {
 function initializeAuth() {
     const loginBtn = document.getElementById('loginBtn');
     const signupBtn = document.getElementById('signupBtn');
-    
-    if (loginBtn) {
-        loginBtn.addEventListener('click', showLoginModal);
+    console.log('initializeAuth: loginBtn=', !!loginBtn, 'signupBtn=', !!signupBtn);
+
+    // Attach handlers robustly. If elements are not yet available, retry once.
+    function attachHandlers() {
+        const lb = document.getElementById('loginBtn');
+        const sb = document.getElementById('signupBtn');
+
+        if (lb) {
+            try {
+                lb.disabled = false;
+                lb.style.pointerEvents = 'auto';
+                lb.addEventListener('click', showLoginModal);
+                console.log('initializeAuth: attached click to loginBtn');
+            } catch (e) {
+                console.error('initializeAuth: failed attach loginBtn', e);
+            }
+        }
+
+        if (sb) {
+            try {
+                sb.disabled = false;
+                sb.style.pointerEvents = 'auto';
+                sb.addEventListener('click', showSignupModal);
+                console.log('initializeAuth: attached click to signupBtn');
+            } catch (e) {
+                console.error('initializeAuth: failed attach signupBtn', e);
+            }
+        }
     }
-    
-    if (signupBtn) {
-        signupBtn.addEventListener('click', showSignupModal);
+
+    attachHandlers();
+
+    // If not found immediately, try again shortly (helps when DOM changes)
+    if (!loginBtn || !signupBtn) {
+        setTimeout(() => {
+            console.log('initializeAuth: retrying attachment after timeout');
+            attachHandlers();
+        }, 300);
     }
 }
 
